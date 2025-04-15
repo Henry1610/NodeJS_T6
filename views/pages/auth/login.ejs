@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta name="description" content="POS - Bootstrap Admin Template">
+    <meta name="keywords"
+        content="admin, estimates, bootstrap, business, corporate, creative, management, minimal, modern,  html5, responsive">
+    <meta name="author" content="Dreamguys - Bootstrap Admin Template">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Đăng nhập</title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="/template/img/favicon.jpg">
+
+    <link rel="stylesheet" href="/template/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="/template/css/animate.css">
+
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/fontawesome.min.css">
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="/template/css/style.css">
+</head>
+
+<body class="account-page">
+    <div class="main-wrapper">
+        <div class="account-content">
+            <div class="row">
+                <div class="col-md-6 login-left">
+                    <img src="/template/img/login.jpg" class="img-fluid" alt="Logo">
+                </div>
+                <div class="col-md-6 login-right">
+                    <div class="login-header">
+                        <div class="login-left-logo">
+                            <img src="/template/img/logo.png" alt="Logo">
+                        </div>
+                        <h3>Đăng nhập</h3>
+                        <p>Hệ thống quản lý bán hàng</p>
+                    </div>
+                    <% if (errorMessage) { %>
+                        <div class="alert alert-danger"><%= errorMessage %></div>
+                    <% } %>
+                    <form action="/login" method="POST">
+                        <div class="form-group mb-3">
+                            <label class="form-control-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-control-label">Mật khẩu</label>
+                            <div class="pass-group">
+                                <input type="password" name="password" class="form-control" required>
+                                <span class="fas fa-eye toggle-password"></span>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <div class="row">
+                                <div class="col-sm-10">
+                                    <label class="custom_check ms-1">Nhớ mật khẩu
+                                        <input type="checkbox" name="remember">
+                                        <span class="checkmark"></span>
+                                    </label>
+                                </div>
+                                <div class="col-sm-2 text-end">
+                                    <a class="forgot-link" href="#">Quên mật khẩu?</a>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="btn btn-lg btn-block w-100 btn-primary" type="submit">Đăng nhập</button>
+                        <div class="text-center dont-have">Chưa có tài khoản? <a href="/register">Đăng ký</a></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/template/js/jquery-3.6.0.min.js"></script>
+    <script src="/template/js/feather.min.js"></script>
+    <script src="/template/js/bootstrap.bundle.min.js"></script>
+    <script src="/template/js/script.js"></script>
+</body>
+
+</html> 

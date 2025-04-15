@@ -1,0 +1,95 @@
+<%- include('../../components/layouts.ejs', {content: `
+    <div class="content">
+        <div class="page-header">
+            <div class="page-title">
+                <h4>Brand List</h4>
+                <h6>Manage your Brand</h6>
+            </div>
+            <div class="page-btn">
+                <a href="/admin/addbrand" class="btn btn-added">
+                    <img src="/template/img/icons/plus.svg" class="me-2" alt="img">Add Brand
+                </a>
+            </div>
+        </div>
+    
+        <div class="card">
+            <div class="card-body">
+                <div class="table-top">
+                    <div class="search-set">
+                        <div class="search-path">
+                            <a class="btn btn-filter" id="filter_search">
+                                <img src="/template/img/icons/filter.svg" alt="img">
+                                <span><img src="/template/img/icons/closes.svg" alt="img"></span>
+                            </a>
+                        </div>
+                        <div class="search-input">
+                            <a class="btn btn-searchset">
+                                <img src="/template/img/icons/search-white.svg" alt="img">
+                            </a>
+                        </div>
+                    </div>
+                    <div class="wordset">
+                        <ul>
+                            <li><a data-bs-toggle="tooltip" title="pdf"><img src="/template/img/icons/pdf.svg" alt="img"></a></li>
+                            <li><a data-bs-toggle="tooltip" title="excel"><img src="/template/img/icons/excel.svg" alt="img"></a></li>
+                            <li><a data-bs-toggle="tooltip" title="print"><img src="/template/img/icons/printer.svg" alt="img"></a></li>
+                        </ul>
+                    </div>
+                </div>
+    
+                <div class="table-responsive">
+                    <table class="table datanew">
+                        <thead>
+                            <tr>
+                                <th>
+                                    <label class="checkboxs">
+                                        <input type="checkbox" id="select-all">
+                                        <span class="checkmarks"></span>
+                                    </label>
+                                </th>
+                                <th>Brand Name</th>
+                                <th>Brand Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${brands && brands.length > 0 ? brands.map(brand => `
+                            <tr>
+                                <td>
+                                    <label class="checkboxs">
+                                        <input type="checkbox">
+                                        <span class="checkmarks"></span>
+                                    </label>
+                                </td>
+                                <td>${brand.name}</td>
+                                <td>${brand.description || ''}</td>
+                                <td>
+                                    <a class="me-3" href="/admin/editbrand/${brand._id}">
+                                        <img src="/template/img/icons/edit.svg" alt="Edit">
+                                    </a>
+                                    <a class="me-3 confirm-text" href="javascript:void(0);" onclick="confirmDelete('${brand._id}', '${brand.name}')">
+                                        <img src="/template/img/icons/delete.svg" alt="Delete">
+                                    </a>
+                                </td>
+                            </tr>
+                            `).join('') : `
+                            <tr>
+                                <td colspan="4" class="text-center">No brands available</td>
+                            </tr>
+                            `}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+    function confirmDelete(id, name) {
+        if (confirm('Bạn có chắc chắn muốn xóa brand "' + name + '" không?')) {
+            window.location.href = '/admin/deletebrand/' + id;
+        }
+    }
+    </script>
+    `}) %>
+    

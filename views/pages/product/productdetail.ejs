@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta name="description" content="POS - Bootstrap Admin Template">
+    <meta name="keywords"
+        content="admin, estimates, bootstrap, business, corporate, creative, management, minimal, modern,  html5, responsive">
+    <meta name="author" content="Dreamguys - Bootstrap Admin Template">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Dreamss Pos admin template</title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="/template/img/favicon.jpg">
+
+    <link rel="stylesheet" href="/template/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="/template/css/animate.css">
+
+    <link rel="stylesheet" href="/template/css/dataTables.bootstrap4.min.css">
+
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/fontawesome.min.css">
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="/template/css/style.css">
+</head>
+
+<body>
+    <div id="global-loader">
+        <div class="whirly-loader"> </div>
+    </div>
+
+    <div class="main-wrapper">
+
+        
+        <%- include('../../components/header.ejs')%>
+        <%- include('../../components/sidebar.ejs')%>
+
+        <div class="page-wrapper">
+            <div class="content">
+                <div class="page-header">
+                    <div class="page-title">
+                        <h4>Product Details</h4>
+                        <h6>Full details of a product</h6>
+                    </div>
+                    <div class="page-btn">
+                        <a href="/admin/productlist" class="btn btn-added">
+                            <i class="fa fa-arrow-left"></i> Back
+                        </a>
+                    </div>
+                </div>
+            
+                <div class="row">
+                    <div class="col-lg-8 col-sm-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="bar-code-view">
+                                    <img src="/template/img/barcode1.png" alt="barcode">
+                                    <a class="printimg">
+                                        <img src="/template/img/icons/printer.svg" alt="print">
+                                    </a>
+                                </div>
+                                <div class="productdetails">
+                                    <ul class="product-bar">
+                                        <li>
+                                            <h4>Product</h4>
+                                            <h6><%= product.title %></h6>
+                                        </li>
+                                        <li>
+                                            <h4>Category</h4>
+                                            <h6><%= product.categoryName %></h6>
+                                        </li>
+                                        
+                                        <li>
+                                            <h4>Brand</h4>
+                                            <h6><%= product.brandName %></h6>
+                                        </li>
+                                        
+                                        <li>
+                                            <h4>ID</h4>
+                                            <h6><%= product._id %></h6>
+                                        </li>
+                                        
+                                        <li>
+                                            <h4>Quantity</h4>
+                                            <h6><%= product.quantity %></h6>
+                                        </li>
+                                        
+                                        
+                                        <li> 
+                                            <h4>Price</h4>
+                                            <h6><%= product.price %></h6>
+                                        </li>
+                                        
+                                        <li>
+                                            <h4>Description</h4>
+                                            <h6><%= product.description %></h6>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-4 col-sm-12">
+                        <div class="card">
+                            <div class="card-body">
+                                <div class="product-img">
+                                    <img src="<%= product.imgUrl %>" alt="product image" class="img-fluid">
+                                </div>
+                                <div class="mt-4">
+                                    <a href="/admin/editproduct/<%= product._id %>" class="btn btn-primary me-2">
+                                        <i class="fa fa-edit"></i> Edit Product
+                                    </a>
+                                    <form action="/admin/delete-product" method="POST" style="display:inline;">
+                                        <input type="hidden" name="productId" value="<%= product._id %>">
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fa fa-trash"></i> Delete Product
+                                        </button>
+                                    </form>
+                                    
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            
+            </div>
+        </div>
+    </div>
+
+       
+    
+
+
+    <script src="/template/js/jquery-3.6.0.min.js"></script>
+
+    <script src="/template/js/feather.min.js"></script>
+
+    <script src="/template/js/jquery.slimscroll.min.js"></script>
+
+    <script src="/template/js/jquery.dataTables.min.js"></script>
+    <script src="/template/js/dataTables.bootstrap4.min.js"></script>
+
+    <script src="/template/js/bootstrap.bundle.min.js"></script>
+
+    <script src="/template/plugins/apexchart/apexcharts.min.js"></script>
+    <script src="/template/plugins/apexchart/chart-data.js"></script>
+
+    <script src="/template/js/script.js"></script>
+</body>
+
+</html>
+
+

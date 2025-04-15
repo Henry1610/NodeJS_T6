@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta name="description" content="POS - Bootstrap Admin Template">
+    <meta name="keywords"
+        content="admin, estimates, bootstrap, business, corporate, creative, management, minimal, modern,  html5, responsive">
+    <meta name="author" content="Dreamguys - Bootstrap Admin Template">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Đăng ký</title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="/template/img/favicon.jpg">
+
+    <link rel="stylesheet" href="/template/css/bootstrap.min.css">
+
+    <link rel="stylesheet" href="/template/css/animate.css">
+
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/fontawesome.min.css">
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/all.min.css">
+
+    <link rel="stylesheet" href="/template/css/style.css">
+</head>
+
+<body class="account-page">
+    <div class="main-wrapper">
+        <div class="account-content">
+            <div class="row">
+                <div class="col-md-6 login-left">
+                    <img src="/template/img/login.jpg" class="img-fluid" alt="Logo">
+                </div>
+                <div class="col-md-6 login-right">
+                    <div class="login-header">
+                        <div class="login-left-logo">
+                            <img src="/template/img/logo.png" alt="Logo">
+                        </div>
+                        <h3>Đăng ký</h3>
+                        <p>Tạo tài khoản mới</p>
+                    </div>
+                    <% if (errorMessage) { %>
+                        <div class="alert alert-danger"><%= errorMessage %></div>
+                    <% } %>
+                    <form action="/register" method="POST">
+                        <div class="form-group mb-3">
+                            <label class="form-control-label">Email</label>
+                            <input type="email" name="email" class="form-control" required>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-control-label">Mật khẩu</label>
+                            <div class="pass-group">
+                                <input type="password" name="password" class="form-control" required>
+                                <span class="fas fa-eye toggle-password"></span>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="form-control-label">Xác nhận mật khẩu</label>
+                            <div class="pass-group">
+                                <input type="password" name="confirmPassword" class="form-control" required>
+                                <span class="fas fa-eye toggle-password"></span>
+                            </div>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="custom_check ms-1">
+                                <input type="checkbox" required>
+                                <span class="checkmark"></span>
+                                Tôi đồng ý với các <a href="#"> điều khoản và điều kiện</a>
+                            </label>
+                        </div>
+                        <button class="btn btn-lg btn-block w-100 btn-primary" type="submit">Đăng ký</button>
+                        <div class="text-center dont-have">Đã có tài khoản? <a href="/login">Đăng nhập</a></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/template/js/jquery-3.6.0.min.js"></script>
+    <script src="/template/js/feather.min.js"></script>
+    <script src="/template/js/bootstrap.bundle.min.js"></script>
+    <script src="/template/js/script.js"></script>
+</body>
+
+</html> 

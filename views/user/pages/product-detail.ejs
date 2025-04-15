@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+    <meta name="description" content="Hệ thống quản lý bán hàng">
+    <meta name="keywords" content="shop, store, ecommerce, responsive">
+    <meta name="author" content="ITC School">
+    <meta name="robots" content="noindex, nofollow">
+    <title><%= title %></title>
+
+    <link rel="shortcut icon" type="image/x-icon" href="/template/img/favicon.jpg">
+    <link rel="stylesheet" href="/template/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/template/css/animate.css">
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/fontawesome.min.css">
+    <link rel="stylesheet" href="/template/plugins/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/template/css/style.css">
+    <link rel="stylesheet" href="/template/css/custom.css">
+</head>
+
+<body>
+    <div class="main-wrapper">
+        <!-- Header -->
+        <header class="header-user">
+            <div class="container">
+                <div class="row align-items-center py-3">
+                    <div class="col-md-3">
+                        <div class="logo">
+                            <a href="/"><img src="/template/img/logo.png" alt="Logo"></a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="search-form">
+                            <form action="/search" method="GET">
+                                <div class="input-group">
+                                    <input type="text" class="form-control" placeholder="Tìm kiếm sản phẩm..." name="q">
+                                    <button class="btn btn-primary" type="submit">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="user-actions d-flex justify-content-end">
+                            <% if (isAuthenticated) { %>
+                                <div class="dropdown">
+                                    <button class="btn btn-link dropdown-toggle" type="button" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <i class="fas fa-user-circle fa-lg me-1"></i> <%= user.email %>
+                                    </button>
+                                    <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                        <li><a class="dropdown-item" href="/profile"><i class="fas fa-user me-2"></i> Tài khoản của tôi</a></li>
+                                        <li><a class="dropdown-item" href="/orders"><i class="fas fa-list me-2"></i> Đơn hàng</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <form action="/logout" method="POST">
+                                                <button type="submit" class="dropdown-item"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</button>
+                                            </form>
+                                        </li>
+                                    </ul>
+                                </div>
+                            <% } else { %>
+                                <a href="/login" class="btn btn-outline-primary me-2">Đăng nhập</a>
+                                <a href="/register" class="btn btn-primary">Đăng ký</a>
+                            <% } %>
+                            <a href="/cart" class="btn btn-link ms-3">
+                                <i class="fas fa-shopping-cart fa-lg"></i>
+                                <span class="badge bg-danger rounded-pill">0</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+                <div class="container">
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarNav">
+                        <ul class="navbar-nav">
+                            <li class="nav-item">
+                                <a class="nav-link <%= path === '/' ? 'active' : '' %>" href="/">Trang chủ</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <%= path === '/products' ? 'active' : '' %>" href="/products">Sản phẩm</a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle" href="#" id="categoryDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Danh mục
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="categoryDropdown">
+                                    <li><a class="dropdown-item" href="/category/1">Điện thoại</a></li>
+                                    <li><a class="dropdown-item" href="/category/2">Laptop</a></li>
+                                    <li><a class="dropdown-item" href="/category/3">Tablet</a></li>
+                                    <li><a class="dropdown-item" href="/category/4">Phụ kiện</a></li>
+                                </ul>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <%= path === '/about' ? 'active' : '' %>" href="/about">Giới thiệu</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link <%= path === '/contact' ? 'active' : '' %>" href="/contact">Liên hệ</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+        
+        <!-- Main Content -->
+        <div class="user-content">
+            <!-- Chi tiết sản phẩm -->
+<div class="container mt-5 mb-5">
+    <div class="card">
+        <div class="row g-0">
+            <div class="col-md-5 border-end">
+                <div class="d-flex flex-column justify-content-center">
+                    <div class="main_image">
+                        <img src="<%= product.imgUrl %>" id="main_product_image" class="img-fluid" alt="<%= product.title %>">
+                    </div>
+                    
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h2 class="mb-0"><%= product.title %></h2>
+                        <div class="d-flex">
+                            <button class="btn btn-outline-secondary btn-sm me-2">
+                                <i class="far fa-heart"></i> Yêu thích
+                            </button>
+                            <button class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-share-alt"></i> Chia sẻ
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="badge bg-primary me-2"><%= product.categoryName %></span>
+                        <span class="badge bg-info"><%= product.brandName %></span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="d-flex">
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="fas fa-star text-warning"></i>
+                            <i class="far fa-star text-warning"></i>
+                            <span class="ms-2 text-muted">(4.0 - 120 đánh giá)</span>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <span class="h3 text-danger fw-bold"><%= product.price.toLocaleString('vi-VN') %>₫</span>
+                        <span class="text-muted text-decoration-line-through ms-2"><%= (product.price * 1.2).toLocaleString('vi-VN') %>₫</span>
+                        <span class="badge bg-danger ms-2">-20%</span>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Mô tả:</h5>
+                        <p class="text-muted"><%= product.description %></p>
+                    </div>
+
+                    <div class="mb-4">
+                        <h5>Số lượng:</h5>
+                        <div class="d-flex align-items-center mt-2">
+                            <button class="btn btn-outline-secondary btn-sm" id="decreaseQuantity">
+                                <i class="fas fa-minus"></i>
+                            </button>
+                            <input type="number" id="quantityInput" class="form-control mx-2" style="width: 60px;" value="1" min="1" max="<%= product.quantity %>">
+                            <button class="btn btn-outline-secondary btn-sm" id="increaseQuantity">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <span class="ms-3 text-muted">Còn <strong><%= product.quantity %></strong> sản phẩm</span>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-start">
+                        <form id="addToCartForm" action="/user/cart/add" method="POST">
+                            <input type="hidden" name="productId" value="<%= product._id %>">
+                            <input type="hidden" name="quantity" id="quantityValue" value="1">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-cart-plus me-2"></i>Thêm vào giỏ hàng
+                            </button>
+                        </form>
+                        <button class="btn btn-danger btn-lg">
+                            <i class="fas fa-bolt me-2"></i>Mua ngay
+                        </button>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="product-info">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><i class="fas fa-truck text-primary me-2"></i> Miễn phí giao hàng</p>
+                                <p><i class="fas fa-undo text-primary me-2"></i> Đổi trả trong 30 ngày</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><i class="fas fa-shield-alt text-primary me-2"></i> Bảo hành 12 tháng</p>
+                                <p><i class="fas fa-check-circle text-primary me-2"></i> Hàng chính hãng 100%</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sản phẩm liên quan -->
+<div class="container my-5">
+    <h3 class="mb-4">Sản phẩm tương tự</h3>
+    <div class="row">
+        <% if (relatedProducts && relatedProducts.length > 0) { %>
+            <% relatedProducts.forEach(relatedProduct => { %>
+                <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+                    <div class="product-card">
+                        <div class="position-relative">
+                            <a href="/user/product/<%= relatedProduct._id %>">
+                                <img src="<%= relatedProduct.imgUrl %>" class="card-img-top" alt="<%= relatedProduct.title %>">
+                            </a>
+                            <div class="discount-badge">-20%</div>
+                        </div>
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                <a href="/user/product/<%= relatedProduct._id %>" class="text-decoration-none text-dark"><%= relatedProduct.title %></a>
+                            </h5>
+                            <p class="card-text small mb-0 text-muted">
+                                <span class="me-2"><i class="fas fa-tag me-1"></i><%= relatedProduct.categoryName %></span>
+                                <span><i class="fas fa-trademark me-1"></i><%= relatedProduct.brandName %></span>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div>
+                                    <span class="price"><%= relatedProduct.price.toLocaleString('vi-VN') %>₫</span>
+                                    <span class="old-price"><%= (relatedProduct.price * 1.2).toLocaleString('vi-VN') %>₫</span>
+                                </div>
+                                <a href="#" class="btn btn-sm btn-outline-primary" onclick="event.preventDefault(); document.getElementById('add-to-cart-<%= relatedProduct._id %>').submit();">
+                                    <i class="fas fa-cart-plus"></i>
+                                </a>
+                                <form id="add-to-cart-<%= relatedProduct._id %>" action="/user/cart/add" method="POST" style="display: none;">
+                                    <input type="hidden" name="productId" value="<%= relatedProduct._id %>">
+                                    <input type="hidden" name="quantity" value="1">
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            <% }) %>
+        <% } else { %>
+            <div class="col-12">
+                <p class="text-center">Không có sản phẩm tương tự.</p>
+            </div>
+        <% } %>
+    </div>
+</div>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="footer-user bg-dark text-white pt-5 pb-4">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-4 mb-4">
+                        <h5 class="text-uppercase mb-4">Thông tin công ty</h5>
+                        <p>Hệ thống cửa hàng điện tử hàng đầu với nhiều sản phẩm chất lượng cao, giá cả hợp lý và dịch vụ chăm sóc khách hàng tuyệt vời.</p>
+                        <div class="social-icons mt-3">
+                            <a href="#" class="text-white me-3"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#" class="text-white me-3"><i class="fab fa-twitter"></i></a>
+                            <a href="#" class="text-white me-3"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="text-white me-3"><i class="fab fa-linkedin-in"></i></a>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-4">
+                        <h5 class="text-uppercase mb-4">Liên kết</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="/" class="text-white text-decoration-none">Trang chủ</a></li>
+                            <li class="mb-2"><a href="/products" class="text-white text-decoration-none">Sản phẩm</a></li>
+                            <li class="mb-2"><a href="/about" class="text-white text-decoration-none">Giới thiệu</a></li>
+                            <li class="mb-2"><a href="/contact" class="text-white text-decoration-none">Liên hệ</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <h5 class="text-uppercase mb-4">Dịch vụ khách hàng</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="/account" class="text-white text-decoration-none">Tài khoản của tôi</a></li>
+                            <li class="mb-2"><a href="/orders" class="text-white text-decoration-none">Đơn hàng</a></li>
+                            <li class="mb-2"><a href="/shipping" class="text-white text-decoration-none">Thông tin vận chuyển</a></li>
+                            <li class="mb-2"><a href="/faq" class="text-white text-decoration-none">Câu hỏi thường gặp</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3 mb-4">
+                        <h5 class="text-uppercase mb-4">Liên hệ với chúng tôi</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-map-marker-alt me-2"></i> 123 Đường Nguyễn Trãi, Quận 1, TP.HCM</li>
+                            <li class="mb-2"><i class="fas fa-phone me-2"></i> (84) 28 1234 5678</li>
+                            <li class="mb-2"><i class="fas fa-envelope me-2"></i> support@example.com</li>
+                            <li class="mb-2"><i class="fas fa-clock me-2"></i> Thứ 2 - Thứ 6: 9:00 - 17:00</li>
+                        </ul>
+                    </div>
+                </div>
+                <hr class="bg-secondary">
+                <div class="row">
+                    <div class="col-md-6 text-center text-md-start">
+                        <p class="mb-0">&copy; 2024 ITC Shop. All rights reserved.</p>
+                    </div>
+                    <div class="col-md-6 text-center text-md-end">
+                        <img src="/template/img/payment-methods.png" alt="Payment Methods" class="img-fluid" style="max-height: 30px;">
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Scripts -->
+    <script src="/template/js/jquery-3.6.0.min.js"></script>
+    <script src="/template/js/bootstrap.bundle.min.js"></script>
+    <script src="/template/js/feather.min.js"></script>
+    <script src="/template/js/script.js"></script>
+    <script>
+        // Khởi tạo tooltip
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        })
+    </script>
+</body>
+
+</html> 
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const decreaseBtn = document.getElementById('decreaseQuantity');
+        const increaseBtn = document.getElementById('increaseQuantity');
+        const quantityInput = document.getElementById('quantityInput');
+        const quantityValue = document.getElementById('quantityValue');
+        const maxQuantity = <%= product.quantity %>;
+        
+        decreaseBtn.addEventListener('click', function() {
+            let currentValue = parseInt(quantityInput.value);
+            if (currentValue > 1) {
+                currentValue--;
+                quantityInput.value = currentValue;
+                quantityValue.value = currentValue;
+            }
+        });
+        
+        increaseBtn.addEventListener('click', function() {
+            let currentValue = parseInt(quantityInput.value);
+            if (currentValue < maxQuantity) {
+                currentValue++;
+                quantityInput.value = currentValue;
+                quantityValue.value = currentValue;
+            }
+        });
+        
+        quantityInput.addEventListener('change', function() {
+            let currentValue = parseInt(quantityInput.value);
+            if (currentValue < 1) {
+                currentValue = 1;
+            } else if (currentValue > maxQuantity) {
+                currentValue = maxQuantity;
+            }
+            quantityInput.value = currentValue;
+            quantityValue.value = currentValue;
+        });
+        
+        // Thumbnail images
+        const thumbnails = document.querySelectorAll('#thumbnail li img');
+        const mainImage = document.getElementById('main_product_image');
+        
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', function() {
+                mainImage.src = this.src;
+            });
+        });
+    });
+</script> 

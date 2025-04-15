@@ -1,0 +1,37 @@
+<%- include('../../components/layouts.ejs', {
+    content: `
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h4>Edit Brand</h4>
+            <h6>Update your Brand</h6>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form action="/admin/editbrand/${brand._id}" method="POST">
+                <div class="row">
+                    <div class="col-lg-3 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Brand Name</label>
+                            <input type="text" name="name" value="${brand.name}" required>
+                        </div>
+                    </div>
+                    <div class="col-lg-12">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea name="description" class="form-control">${brand.description || ''}</textarea>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-12">
+                        <button type="submit" class="btn btn-submit me-2">Update</button>
+                        <a href="/admin/brandlist" class="btn btn-cancel">Back</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+` }) %>
