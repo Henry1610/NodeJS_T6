@@ -1,0 +1,310 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/admin/orders">Quản lý đơn hàng</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Chi tiết đơn hàng</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12 d-flex justify-content-between align-items-center">
+            <h1 class="h2 mb-0">Chi tiết đơn hàng #<%= order._id.toString().substring(order._id.toString().length - 6) %></h1>
+            <div class="status-section d-flex align-items-center">
+                <span class="me-3">Trạng thái:</span>
+                <div class="dropdown">
+                    <button class="btn dropdown-toggle status-button <%= getStatusButtonClass(order.status) %>" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas <%= getStatusIcon(order.status) %> me-2"></i>
+                        <%= order.status %>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdownMenuButton">
+                        <% ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao hàng', 'Đã giao hàng', 'Đã hủy'].forEach(status => { %>
+                            <% if (status !== order.status) { %>
+                                <li>
+                                    <button class="dropdown-item update-status" 
+                                            data-order-id="<%= order._id %>" 
+                                            data-status="<%= status %>">
+                                        <i class="fas <%= getStatusIcon(status) %> me-2"></i>
+                                        <%= status %>
+                                    </button>
+                                </li>
+                            <% } %>
+                        <% }); %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Thông tin đơn hàng -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Thông tin đơn hàng</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <p><strong>Ngày đặt hàng:</strong> <%= new Date(order.orderDate).toLocaleDateString('vi-VN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            }) %></p>
+                            <p><strong>Mã đơn hàng:</strong> #<%= order._id.toString() %></p>
+                            <p><strong>Email khách hàng:</strong> <%= order.user.email %></p>
+                            <p><strong>Tên khách hàng:</strong> <%= order.user.name || 'Không có thông tin' %></p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Số điện thoại:</strong> <%= order.user.phone || 'Không có thông tin' %></p>
+                            <p><strong>Địa chỉ giao hàng:</strong> <%= order.user.address || 'Không có thông tin' %></p>
+                            <p><strong>Phương thức thanh toán:</strong> COD (Thanh toán khi nhận hàng)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sản phẩm trong đơn hàng -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Sản phẩm trong đơn hàng</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-striped m-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th scope="col">Sản phẩm</th>
+                                    <th scope="col" class="text-center">Số lượng</th>
+                                    <th scope="col" class="text-end">Giá</th>
+                                    <th scope="col" class="text-end">Thành tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <% order.items.forEach(item => { %>
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <img src="<%= item.imageUrl || '/images/default-product.jpg' %>" alt="<%= item.title %>" class="me-3" style="width: 50px; height: 50px; object-fit: cover;">
+                                                <div>
+                                                    <div class="fw-bold"><%= item.title %></div>
+                                                    <small class="text-muted">ID: <%= item.productId %></small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-center">
+                                            <%= item.quantity %>
+                                        </td>
+                                        <td class="text-end">
+                                            <%= item.price.toLocaleString('vi-VN') %> VNĐ
+                                        </td>
+                                        <td class="text-end fw-bold">
+                                            <%= (item.price * item.quantity).toLocaleString('vi-VN') %> VNĐ
+                                        </td>
+                                    </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Hành động -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Hành động</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="/admin/orders" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-2"></i> Quay lại danh sách
+                        </a>
+                        <button type="button" class="btn btn-primary" id="printOrder">
+                            <i class="fas fa-print me-2"></i> In đơn hàng
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tổng tiền -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Tổng tiền</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Tổng tiền sản phẩm:</span>
+                        <span class="fw-bold"><%= order.totalPrice.toLocaleString('vi-VN') %> VNĐ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Phí vận chuyển:</span>
+                        <span><%= order.shippingFee.toLocaleString('vi-VN') %> VNĐ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Khuyến mãi:</span>
+                        <span>0 VNĐ</span>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <span class="fw-bold">Tổng thanh toán:</span>
+                        <span class="fw-bold text-primary h5"><%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lịch sử đơn hàng -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Lịch sử trạng thái</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="timeline">
+                        <li class="timeline-item">
+                            <div class="timeline-marker bg-success">
+                                <i class="fas fa-check text-white"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5 class="timeline-title">Đơn hàng được tạo</h5>
+                                <p class="timeline-text"><%= new Date(order.orderDate).toLocaleDateString('vi-VN') %></p>
+                            </div>
+                        </li>
+                        <% if (order.updatedAt) { %>
+                        <li class="timeline-item">
+                            <div class="timeline-marker bg-info">
+                                <i class="fas fa-sync text-white"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5 class="timeline-title">Trạng thái cập nhật: <%= order.status %></h5>
+                                <p class="timeline-text"><%= new Date(order.updatedAt).toLocaleDateString('vi-VN') %></p>
+                            </div>
+                        </li>
+                        <% } %>
+                        <% if (order.cancelledAt) { %>
+                        <li class="timeline-item">
+                            <div class="timeline-marker bg-danger">
+                                <i class="fas fa-times text-white"></i>
+                            </div>
+                            <div class="timeline-content">
+                                <h5 class="timeline-title">Đơn hàng đã hủy</h5>
+                                <p class="timeline-text"><%= new Date(order.cancelledAt).toLocaleDateString('vi-VN') %></p>
+                            </div>
+                        </li>
+                        <% } %>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .status-button {
+        min-width: 150px;
+    }
+
+    .timeline {
+        list-style-type: none;
+        margin: 0;
+        padding: 0;
+        position: relative;
+    }
+
+    .timeline:before {
+        content: '';
+        position: absolute;
+        top: 5px;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+        left: 12px;
+        margin-left: -1px;
+        height: calc(100% - 10px);
+    }
+
+    .timeline-item {
+        position: relative;
+        padding-left: 40px;
+        margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 1;
+    }
+
+    .timeline-content {
+        margin-left: 15px;
+    }
+
+    .timeline-title {
+        margin-bottom: 0.25rem;
+        font-size: 1rem;
+    }
+
+    .timeline-text {
+        margin-bottom: 0;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Update order status
+        const updateStatusButtons = document.querySelectorAll('.update-status');
+        
+        updateStatusButtons.forEach(button => {
+            button.addEventListener('click', async function() {
+                const orderId = this.getAttribute('data-order-id');
+                const newStatus = this.getAttribute('data-status');
+                
+                if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng thành "${newStatus}"?`)) {
+                    try {
+                        const response = await fetch(`/admin/order/${orderId}/update-status`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            alert('Cập nhật trạng thái đơn hàng thành công!');
+                            location.reload();
+                        } else {
+                            alert('Lỗi: ' + result.message);
+                        }
+                    } catch (error) {
+                        alert('Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng.');
+                        console.error(error);
+                    }
+                }
+            });
+        });
+        
+        // Print order
+        document.getElementById('printOrder').addEventListener('click', function() {
+            window.print();
+        });
+    });
+</script> 

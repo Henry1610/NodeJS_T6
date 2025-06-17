@@ -85,6 +85,9 @@ class Cart {
                 throw new Error('Sản phẩm không tồn tại');
             }
 
+            // Chuyển đổi quantity sang số
+            quantity = parseInt(quantity) || 0;
+
             // Tìm sản phẩm trong giỏ hàng
             const existingProductIndex = this.items.findIndex(
                 item => item.productId.toString() === productId.toString()

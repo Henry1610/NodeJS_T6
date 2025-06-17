@@ -4,14 +4,14 @@ const Brand = require('../models/brand');
 exports.getBrandList = (req, res) => {
     Brand.fetchAll()
         .then(brands => {
-            res.render('pages/brand/brandlist', {
+            res.render('admin/brand/brandlist', {
                 title: 'Brand List',
                 brands
             });
         })
         .catch(err => {
             console.log(err);
-            res.render('pages/brand/brandlist', {
+            res.render('admin/brand/brandlist', {
                 title: 'Brand List',
                 brands: []
             });
@@ -20,7 +20,7 @@ exports.getBrandList = (req, res) => {
 
 // Hiển thị form thêm thương hiệu
 exports.getAddBrand = (req, res) => {
-    res.render('pages/brand/addbrand', { title: 'Add Brand' });
+    res.render('admin/brand/addbrand', { title: 'Add Brand' });
 };
 
 // Xử lý thêm thương hiệu
@@ -41,7 +41,7 @@ exports.getEditBrand = (req, res) => {
     Brand.findById(req.params.id)
         .then(brand => {
             if (!brand) return res.redirect('/admin/brandlist');
-            res.render('pages/brand/editbrand', {
+            res.render('admin/brand/editbrand', {
                 title: 'Edit Brand',
                 brand
             });

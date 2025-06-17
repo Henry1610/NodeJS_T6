@@ -1,0 +1,128 @@
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h4>Product List</h4>
+            <h6>Manage your products</h6>
+        </div>
+        <div class="page-btn d-flex">
+            <a href="/admin/product-statistics" class="btn btn-primary me-2 btn-added">
+                <i class="fa fa-chart-bar"></i> Statistics
+            </a>
+            
+            <a href="addproduct" class="btn btn-added"><img src="/template/img/icons/plus.svg"
+                    alt="img" class="me-1">Add New Product</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-top">
+                <div class="search-set">
+                    <div class="search-path">
+                        <a class="btn btn-filter" id="filter_search">
+                            <img src="/template/img/icons/filter.svg" alt="img">
+                            <span><img src="/template/img/icons/closes.svg" alt="img"></span>
+                        </a>
+                    </div>
+                    <div class="search-input">
+                        <form action="/admin/product-search" method="GET">
+                            <button type="submit" class="btn btn-searchset"><img src="/template/img/icons/search-white.svg"
+                                    alt="img"></button>
+                        </form>
+                    </div>
+                </div>
+                <div class="wordset">
+                    <ul>
+                        <li>
+                            <a data-bs-toggle="tooltip" data-bs-placement="top" title="pdf"><img
+                                    src="/template/img/icons/pdf.svg" alt="img"></a>
+                        </li>
+                        <li>
+                            <a data-bs-toggle="tooltip" data-bs-placement="top" title="excel"><img
+                                    src="/template/img/icons/excel.svg" alt="img"></a>
+                        </li>
+                        <li>
+                            <a data-bs-toggle="tooltip" data-bs-placement="top" title="print"><img
+                                    src="/template/img/icons/printer.svg" alt="img"></a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table datanew">
+                    <thead>
+                        <tr>
+                            <th>
+                                <label class="checkboxs">
+                                    <input type="checkbox" id="select-all">
+                                    <span class="checkmarks"></span>
+                                </label>
+                            </th>
+                            <th>Product Name</th>
+                            <th>Category </th>
+                            <th>Brand</th>
+                            <th>Price</th>
+                            <th>Qty</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (products && products.length> 0) { %>
+                            <% products.forEach(function(product) { %>
+                                <tr>
+                                    <td>
+                                        <label class="checkboxs">
+                                            <input type="checkbox">
+                                            <span class="checkmarks"></span>
+                                        </label>
+                                    </td>
+                                    <td >
+                                        
+                                        
+                                            <%= product.title %>
+                                        
+                                    </td>
+                                    <td>
+                                        <%= product.categoryName || 'N/A' %>
+                                    </td>
+                                    <td>
+                                        <%= product.brandName || 'N/A' %>
+                                    </td>
+                                    <td>
+                                        <%= product.price %>
+                                    </td>
+                                    <td>
+                                        <%= product.quantity %>
+                                    </td>
+                                    <td>
+                                        <a class="me-3" href="/admin/productdetail/<%= product._id %>">
+                                            <img src="/template/img/icons/eye.svg" alt="img">
+                                        </a>
+                                        <a class="me-3" href="/admin/editproduct/<%= product._id %>">
+                                            <img src="/template/img/icons/edit.svg" alt="img">
+                                        </a>
+                                        <form action="/admin/delete-product" method="POST"
+                                            style="display:inline;">
+                                            <input type="hidden" name="productId"
+                                                value="<%= product._id %>">
+                                            <button type="submit"
+                                                class="btn-link border-0 bg-transparent p-0">
+                                                <img src="/template/img/icons/delete.svg" alt="img">
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                                    <% } else { %>
+                                        <tr>
+                                            <td colspan="7" class="text-center">No products found
+                                            </td>
+                                        </tr>
+                                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

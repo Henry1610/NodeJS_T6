@@ -1,0 +1,188 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid p-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">Quản lý đơn hàng</h1>
+        <div>
+            <form class="d-inline-block" id="filterForm">
+                <div class="input-group">
+                    <select class="form-control" id="statusFilter">
+                        <option value="all">Tất cả trạng thái</option>
+                        <option value="Chờ xác nhận">Chờ xác nhận</option>
+                        <option value="Đã xác nhận">Đã xác nhận</option>
+                        <option value="Đang giao hàng">Đang giao hàng</option>
+                        <option value="Đã giao hàng">Đã giao hàng</option>
+                        <option value="Đã hủy">Đã hủy</option>
+                    </select>
+                    <button class="btn btn-primary" type="submit">Lọc</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover align-middle" id="ordersTable">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col">Mã đơn hàng</th>
+                            <th scope="col">Khách hàng</th>
+                            <th scope="col">Ngày đặt</th>
+                            <th scope="col">Tổng tiền</th>
+                            <th scope="col">Số lượng</th>
+                            <th scope="col">Trạng thái</th>
+                            <th scope="col">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% if (orders && orders.length > 0) { %>
+                            <% orders.forEach(order => { %>
+                                <tr data-status="<%= order.status %>">
+                                    <td class="fw-bold">#<%= order._id.toString().substring(order._id.toString().length - 6) %></td>
+                                    <td>
+                                        <div><%= order.user.email %></div>
+                                        <small class="text-muted"><%= order.user.name || '' %></small>
+                                    </td>
+                                    <td>
+                                        <%= new Date(order.orderDate).toLocaleDateString('vi-VN', {
+                                            year: 'numeric',
+                                            month: 'short',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit'
+                                        }) %>
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        <%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ
+                                    </td>
+                                    <td class="text-center">
+                                        <%= order.items.reduce((sum, item) => sum + item.quantity, 0) %> sản phẩm
+                                    </td>
+                                    <td>
+                                        <span class="status-badge badge <%= getStatusClass(order.status) %>">
+                                            <%= order.status %>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group">
+                                            <a href="/admin/order/<%= order._id %>" class="btn btn-sm btn-outline-primary">
+                                                <i class="fas fa-eye me-1"></i> Chi tiết
+                                            </a>
+                                            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown" aria-expanded="false">
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+                                            <ul class="dropdown-menu dropdown-menu-end">
+                                                <li><h6 class="dropdown-header">Cập nhật trạng thái</h6></li>
+                                                <% ['Chờ xác nhận', 'Đã xác nhận', 'Đang giao hàng', 'Đã giao hàng', 'Đã hủy'].forEach(status => { %>
+                                                    <% if (status !== order.status) { %>
+                                                        <li>
+                                                            <button class="dropdown-item update-status" 
+                                                                    data-order-id="<%= order._id %>" 
+                                                                    data-status="<%= status %>">
+                                                                <i class="fas <%= getStatusIcon(status) %> me-2"></i>
+                                                                <%= status %>
+                                                            </button>
+                                                        </li>
+                                                    <% } %>
+                                                <% }); %>
+                                            </ul>
+                                        </div>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        <% } else { %>
+                            <tr>
+                                <td colspan="7" class="text-center py-4">Không có đơn hàng nào</td>
+                            </tr>
+                        <% } %>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Các hàm helper
+    function getStatusClass(status) {
+        switch(status) {
+            case 'Chờ xác nhận': return 'bg-warning';
+            case 'Đã xác nhận': return 'bg-info';
+            case 'Đang giao hàng': return 'bg-primary';
+            case 'Đã giao hàng': return 'bg-success';
+            case 'Đã hủy': return 'bg-danger';
+            default: return 'bg-secondary';
+        }
+    }
+    
+    function getStatusIcon(status) {
+        switch(status) {
+            case 'Chờ xác nhận': return 'fa-clock';
+            case 'Đã xác nhận': return 'fa-check';
+            case 'Đang giao hàng': return 'fa-truck';
+            case 'Đã giao hàng': return 'fa-check-double';
+            case 'Đã hủy': return 'fa-times';
+            default: return 'fa-question';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filter form handling
+        const filterForm = document.getElementById('filterForm');
+        const statusFilter = document.getElementById('statusFilter');
+        const ordersTable = document.getElementById('ordersTable');
+        
+        // Apply the filter when the form is submitted
+        filterForm.addEventListener('submit', function(event) {
+            event.preventDefault();
+            
+            const selectedStatus = statusFilter.value;
+            const allRows = ordersTable.querySelectorAll('tbody tr');
+            
+            allRows.forEach(row => {
+                const rowStatus = row.getAttribute('data-status');
+                
+                if (selectedStatus === 'all' || rowStatus === selectedStatus) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Update order status
+        const updateStatusButtons = document.querySelectorAll('.update-status');
+        
+        updateStatusButtons.forEach(button => {
+            button.addEventListener('click', async function() {
+                const orderId = this.getAttribute('data-order-id');
+                const newStatus = this.getAttribute('data-status');
+                
+                if (confirm(`Bạn có chắc chắn muốn cập nhật trạng thái đơn hàng thành "${newStatus}"?`)) {
+                    try {
+                        const response = await fetch(`/admin/order/${orderId}/update-status`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            alert('Cập nhật trạng thái đơn hàng thành công!');
+                            location.reload();
+                        } else {
+                            alert('Lỗi: ' + result.message);
+                        }
+                    } catch (error) {
+                        alert('Đã xảy ra lỗi khi cập nhật trạng thái đơn hàng.');
+                        console.error(error);
+                    }
+                }
+            });
+        });
+    });
+</script> 

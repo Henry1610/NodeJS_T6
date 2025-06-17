@@ -9,25 +9,38 @@ module.exports = {
 
   // Kiểm tra người dùng có quyền admin không
   isAdmin: (req, res, next) => {
-    if (!req.session.isLoggedIn || req.session.user.role !== 'admin') {
-      return res.status(403).render('pages/403', {
-        title: 'Không có quyền truy cập',
-        path: req.originalUrl
-      });
+    if (!req.session.isLoggedIn) {
+      return res.redirect('/login');
+    }
+    if (req.session.user.role !== 'admin') {
+      return res.redirect('/403'); // Trang lỗi không có quyền
     }
     next();
   },
 
-  // Đảm bảo người dùng đã đăng xuất (dùng cho trang login/register)
+  // Hỗ trợ kiểm tra vai trò
+  hasRole: (roles) => {
+    return (req, res, next) => {
+      if (!req.session.isLoggedIn) {
+        return res.redirect('/login');
+      }
+      if (!roles.includes(req.session.user.role)) {
+        return res.redirect('/403');
+      }
+      next();
+    };
+  },
+
+  // Đảm bảo người dùng chưa đăng nhập (dùng cho trang login, register)
   isNotAuth: (req, res, next) => {
     if (req.session.isLoggedIn) {
-      // Nếu là admin, chuyển về trang admin
+      // Kiểm tra vai trò để chuyển hướng đúng
       if (req.session.user.role === 'admin') {
-        return res.redirect('/admin/product-statistics');
+        return res.redirect('/admin/dashboard');
+      } else {
+        return res.redirect('/user');
       }
-      // Nếu là user thường, chuyển về trang chính
-      return res.redirect('/');
     }
     next();
   }
-}; 
+};

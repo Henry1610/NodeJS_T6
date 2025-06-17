@@ -1,0 +1,163 @@
+<%- contentFor('body') %>
+
+<div class="container mt-4">
+  <h1 class="mb-4 fw-bold">Danh sách sản phẩm</h1>
+
+  <div class="row">
+    <!-- Cột lọc sản phẩm (3/12) -->
+    <div class="col-md-3 mb-4">
+      <div class="card shadow-sm border-0 h-100">
+        <div class="card-header bg-light">
+          <h5 class="mb-0 fw-bold">Bộ lọc sản phẩm</h5>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label for="categoryFilter" class="form-label">Danh mục:</label>
+            <select class="form-select rounded-pill" id="categoryFilter">
+              <option value="">Tất cả danh mục</option>
+              <% if (categories && categories.length > 0) { %>
+                <% categories.forEach(category => { %>
+                  <option value="<%= category._id %>"><%= category.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="brandFilter" class="form-label">Thương hiệu:</label>
+            <select class="form-select rounded-pill" id="brandFilter">
+              <option value="">Tất cả thương hiệu</option>
+              <% if (brands && brands.length > 0) { %>
+                <% brands.forEach(brand => { %>
+                  <option value="<%= brand._id %>"><%= brand.name %></option>
+                <% }); %>
+              <% } %>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="priceFilter" class="form-label">Giá:</label>
+            <select class="form-select rounded-pill" id="priceFilter">
+              <option value="">Tất cả mức giá</option>
+              <option value="0-100000">Dưới 100.000 VNĐ</option>
+              <option value="100000-500000">100.000 - 500.000 VNĐ</option>
+              <option value="500000-1000000">500.000 - 1.000.000 VNĐ</option>
+              <option value="1000000-max">Trên 1.000.000 VNĐ</option>
+            </select>
+          </div>
+          <div class="d-grid gap-2">
+            <button class="btn btn-primary rounded-pill" id="applyFilter">Áp dụng</button>
+            <button class="btn btn-outline-secondary rounded-pill" id="resetFilter">Đặt lại</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cột danh sách sản phẩm (9/12) -->
+    <div class="col-md-9">
+      <% if (products && products.length > 0) { %>
+        <div class="row" id="productList">
+          <% for (let product of products) { %>
+            <div class="col-lg-4 col-md-6 mb-4 product-item"
+                 data-category="<%= product.category %>" 
+                 data-brand="<%= product.brand %>" 
+                 data-price="<%= product.price %>">
+              <div class="card h-100 shadow-sm border-0">
+                <img src="<%= product.imageUrl || '/images/default-product.jpg' %>" class="card-img-top" alt="<%= product.title %>" style="height: 200px; object-fit: cover;">
+                <div class="card-body d-flex flex-column">
+                  <h5 class="card-title text-truncate"><%= product.title %></h5>
+                  <p class="card-text text-muted mb-1"><small><%= product.categoryName %> | <%= product.brandName %></small></p>
+                  <p class="card-text text-truncate"><%= product.description %></p>
+                  <p class="card-text text-primary fw-bold mt-auto"><%= product.price.toLocaleString('vi-VN') %> VNĐ</p>
+                  <div class="d-flex justify-content-between mt-2">
+                    <a href="/user/product/<%= product._id %>" class="btn btn-outline-primary btn-sm rounded-pill">Xem chi tiết</a>
+                    <form action="/user/cart/add" method="POST">
+                      <input type="hidden" name="productId" value="<%= product._id %>">
+                      <input type="hidden" name="quantity" value="1">
+                      <button type="submit" class="btn btn-success btn-sm rounded-pill" id="addToCart">
+                        <i class="fas fa-cart-plus me-1"></i> Thêm
+                      </button>
+                      
+                    </form>
+                  </div>
+                </div>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info rounded-3">Không tìm thấy sản phẩm nào.</div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const addToCartBtn = document.getElementById('addToCart');
+    if (addToCartBtn) {
+      addToCartBtn.addEventListener('click', function (event) {
+        event.preventDefault(); // Ngăn form submit ngay
+        alert('Thêm thành công! 🛒');
+
+        // Nếu bạn muốn submit form sau alert:
+        setTimeout(() => {
+          addToCartBtn.closest('form').submit();
+        }, 100); // Delay nhỏ sau alert
+      });
+    }
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    const productList = document.getElementById('productList');
+    const categoryFilter = document.getElementById('categoryFilter');
+    const brandFilter = document.getElementById('brandFilter');
+    const priceFilter = document.getElementById('priceFilter');
+    const applyFilterBtn = document.getElementById('applyFilter');
+    const resetFilterBtn = document.getElementById('resetFilter');
+    const products = document.querySelectorAll('.product-item');
+
+    applyFilterBtn.addEventListener('click', function () {
+      filterProducts();
+    });
+
+    resetFilterBtn.addEventListener('click', function () {
+      categoryFilter.value = '';
+      brandFilter.value = '';
+      priceFilter.value = '';
+      filterProducts();
+    });
+
+    function filterProducts() {
+      const categoryValue = categoryFilter.value;
+      const brandValue = brandFilter.value;
+      const priceValue = priceFilter.value;
+
+      products.forEach(product => {
+        let showProduct = true;
+
+        if (categoryValue && product.dataset.category !== categoryValue) {
+          showProduct = false;
+        }
+
+        if (showProduct && brandValue && product.dataset.brand !== brandValue) {
+          showProduct = false;
+        }
+
+        if (showProduct && priceValue) {
+          const productPrice = parseFloat(product.dataset.price);
+          const [minPrice, maxPrice] = priceValue.split('-');
+
+          if (minPrice && maxPrice === 'max') {
+            if (productPrice < parseFloat(minPrice)) {
+              showProduct = false;
+            }
+          } else if (minPrice && maxPrice) {
+            if (productPrice < parseFloat(minPrice) || productPrice > parseFloat(maxPrice)) {
+              showProduct = false;
+            }
+          }
+        }
+
+        product.style.display = showProduct ? 'block' : 'none';
+      });
+    }
+  });
+</script>

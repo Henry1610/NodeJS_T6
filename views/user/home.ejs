@@ -1,0 +1,131 @@
+<%- contentFor('body') %>
+
+<div class="container mt-4">
+  <!-- Carousel -->
+  <div id="promoCarousel" class="carousel slide mb-5" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+      <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+      <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="1" aria-label="Slide 2"></button>
+      <button type="button" data-bs-target="#promoCarousel" data-bs-slide-to="2" aria-label="Slide 3"></button>
+    </div>
+    <div class="carousel-inner rounded-3 shadow-sm">
+      <div class="carousel-item active">
+        <img src="https://cdnv2.tgdd.vn/mwg-static/tgdd/Banner/bc/b2/bcb2a46ffe0dab976327eb9ebf99ae91.png" class="d-block w-100" alt="Khuyến mãi 1" style="height: 400px; object-fit: cover;">
+        
+      </div>
+      <div class="carousel-item">
+        <img src="https://cdnv2.tgdd.vn/mwg-static/tgdd/Banner/bc/b2/bcb2a46ffe0dab976327eb9ebf99ae91.png" class="d-block w-100" alt="Khuyến mãi 2" style="height: 400px; object-fit: cover;">
+        
+      </div>
+      <div class="carousel-item">
+        <img src="https://cdnv2.tgdd.vn/mwg-static/tgdd/Banner/bc/b2/bcb2a46ffe0dab976327eb9ebf99ae91.png" class="d-block w-100" alt="Khuyến mãi 3" style="height: 400px; object-fit: cover;">
+        
+      </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#promoCarousel" data-bs-slide="prev">
+      <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Trước</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#promoCarousel" data-bs-slide="next">
+      <span class="carousel-control-next-icon" aria-hidden="true"></span>
+      <span class="visually-hidden">Tiếp</span>
+    </button>
+  </div>
+
+  <!-- Hero Section -->
+  <div class="text-center bg-light p-5 rounded-3 shadow-sm mb-5">
+    <h1 class="display-5 fw-bold">Chào mừng đến với cửa hàng của chúng tôi!</h1>
+    <p class="lead">Khám phá những sản phẩm mới nhất và chất lượng tốt nhất tại đây.</p>
+    <hr class="my-4 w-25 mx-auto">
+    <p class="text-muted">Chúng tôi cung cấp các sản phẩm đa dạng với chất lượng cao và giá cả hợp lý.</p>
+    <a class="btn btn-primary btn-lg rounded-pill" href="/user/products">Xem tất cả sản phẩm</a>
+  </div>
+
+  <!-- Latest Products -->
+  <h2 class="mb-4 fw-bold">Sản phẩm mới nhất</h2>
+  
+  <% if (newestProducts && newestProducts.length > 0) { %>
+    <div class="row">
+      <% for (let product of newestProducts) { %>
+        <div class="col-md-3 col-sm-6 mb-4">
+          <div class="card h-100 shadow-sm border-0">
+            <img src="<%= product.imgUrl || '/images/default-product.jpg' %>" class="card-img-top" alt="<%= product.title %>" style="height: 200px; object-fit: cover;">
+            <div class="card-body">
+              <h5 class="card-title text-truncate"><%= product.title %></h5>
+              <p class="card-text text-truncate text-muted"><%= product.description %></p>
+              <p class="card-text text-primary fw-bold"><%= product.price.toLocaleString('vi-VN') %> VNĐ</p>
+              <div class="d-flex justify-content-between align-items-center">
+                <a href="/user/product/<%= product._id %>" class="btn btn-outline-primary btn-sm rounded-pill">Xem chi tiết</a>
+                <form action="/user/cart/add" method="POST" class="add-to-cart-form">
+                  <input type="hidden" name="productId" value="<%= product._id %>">
+                  <input type="hidden" name="quantity" value="1">
+                  <button type="submit" class="btn btn-success btn-sm rounded-pill">
+                    <i class="fas fa-cart-plus me-1"></i> Thêm vào giỏ
+                  </button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      <% } %>
+    </div>
+  <% } else { %>
+    <div class="alert alert-info rounded-3">
+      Hiện tại không có sản phẩm nào.
+    </div>
+  <% } %>
+
+  <!-- Feature Cards -->
+  <div class="row mt-5">
+    <div class="col-md-4 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-truck fa-2x text-primary mb-3"></i>
+          <h5 class="card-title fw-bold">Miễn phí vận chuyển</h5>
+          <p class="card-text text-muted">Cho đơn hàng trên 500.000 VNĐ</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-exchange-alt fa-2x text-primary mb-3"></i>
+          <h5 class="card-title fw-bold">Đổi trả dễ dàng</h5>
+          <p class="card-text text-muted">Đổi trả trong vòng 30 ngày</p>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-4 mb-4">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-body text-center">
+          <i class="fas fa-headset fa-2x text-primary mb-3"></i>
+          <h5 class="card-title fw-bold">Hỗ trợ 24/7</h5>
+          <p class="card-text text-muted">Luôn sẵn sàng hỗ trợ khách hàng</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Thêm banner quảng cáo về tính năng lịch sử mua hàng -->
+  <div class="container mt-4">
+    <div class="row">
+      <div class="col-md-12">
+        <div class="alert alert-info alert-dismissible fade show" role="alert">
+          <div class="d-flex align-items-center">
+            <div class="me-3">
+              <i class="fas fa-history fa-2x"></i>
+            </div>
+            <div>
+              <h5 class="mb-1">Theo dõi lịch sử mua hàng của bạn!</h5>
+              <p class="mb-0">Bạn có thể dễ dàng xem tất cả các đơn hàng đã đặt và trạng thái giao hàng trong phần "Lịch sử mua hàng".</p>
+            </div>
+            <div class="ms-auto">
+              <a href="/user/orders" class="btn btn-outline-primary">Xem ngay</a>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

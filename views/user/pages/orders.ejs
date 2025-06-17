@@ -1,0 +1,145 @@
+<%- contentFor('body') %>
+
+<div class="container mt-4">
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/user">Trang chủ</a></li>
+          <li class="breadcrumb-item active" aria-current="page">Lịch sử đơn hàng</li>
+        </ol>
+      </nav>
+    </div>
+  </div>
+  
+  <!-- Thêm hiển thị thông báo lỗi hoặc thành công -->
+  <% if (typeof query !== 'undefined' && query.success) { %>
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+      <%= query.success %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+  
+  <% if (typeof query !== 'undefined' && query.error) { %>
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+      <%= query.error %>
+      <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+  <% } %>
+
+  <div class="row mb-4">
+    <div class="col-md-12">
+      <h1 class="h2 mb-0 fw-bold">Lịch sử đơn hàng của tôi</h1>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-12">
+      <% if (orders && orders.length > 0) { %>
+        <div class="card shadow-sm border-0">
+          <div class="card-body p-0">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0">
+                <thead class="thead-light">
+                  <tr>
+                    <th scope="col">Mã đơn hàng</th>
+                    <th scope="col">Ngày đặt</th>
+                    <th scope="col">Số lượng sản phẩm</th>
+                    <th scope="col">Tổng tiền</th>
+                    <th scope="col">Trạng thái</th>
+                    <th scope="col">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% orders.forEach(order => { %>
+                    <tr>
+                      <td class="align-middle fw-bold">#<%= order._id.toString().substring(order._id.toString().length - 6) %></td>
+                      <td class="align-middle">
+                        <%= new Date(order.orderDate).toLocaleDateString('vi-VN', { 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric',
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        }) %>
+                      </td>
+                      <td class="align-middle">
+                        <%= order.items.reduce((sum, item) => sum + item.quantity, 0) %> sản phẩm
+                      </td>
+                      <td class="align-middle fw-bold text-primary">
+                        <%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ
+                      </td>
+                      <td class="align-middle">
+                        <% let statusClass = ''; %>
+                        <% let statusText = ''; %>
+                        <% if (order.status === 'Chờ xác nhận') { %>
+                          <% statusClass = 'bg-warning text-dark'; %>
+                          <% statusText = 'Chờ xác nhận'; %>
+                        <% } else if (order.status === 'Đã xác nhận') { %>
+                          <% statusClass = 'bg-info text-white'; %>
+                          <% statusText = 'Đã xác nhận'; %>
+                        <% } else if (order.status === 'Đang giao hàng') { %>
+                          <% statusClass = 'bg-primary text-white'; %>
+                          <% statusText = 'Đang giao hàng'; %>
+                        <% } else if (order.status === 'Đã giao hàng') { %>
+                          <% statusClass = 'bg-success text-white'; %>
+                          <% statusText = 'Đã giao hàng'; %>
+                        <% } else if (order.status === 'Đã hủy') { %>
+                          <% statusClass = 'bg-danger text-white'; %>
+                          <% statusText = 'Đã hủy'; %>
+                        <% } %>
+                        <span class="badge <%= statusClass %>"><%= statusText %></span>
+                      </td>
+                      <td class="align-middle">
+                        <a href="/user/order/<%= order._id %>" class="btn btn-outline-primary btn-sm">
+                          <i class="fas fa-eye me-1"></i> Chi tiết
+                        </a>
+                        <% if (order.status === 'Chờ xác nhận') { %>
+                          <button type="button" class="btn btn-outline-danger btn-sm" onclick="confirmCancel('<%= order._id %>')">
+                            <i class="fas fa-times me-1"></i> Hủy
+                          </button>
+                        <% } %>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% } else { %>
+        <div class="alert alert-info">
+          <p class="mb-0">Bạn chưa có đơn hàng nào. Hãy mua sắm để tạo đơn hàng mới!</p>
+          <a href="/user/products" class="btn btn-primary mt-3">
+            <i class="fas fa-shopping-cart me-2"></i>Tiếp tục mua sắm
+          </a>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</div>
+
+<!-- Thêm script xác nhận hủy đơn hàng -->
+<script>
+  function confirmCancel(orderId) {
+    if (confirm('Bạn có chắc chắn muốn hủy đơn hàng này?')) {
+      // Tạo form ẩn và submit
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = `/user/order/${orderId}/cancel`;
+      document.body.appendChild(form);
+      form.submit();
+    }
+  }
+
+  // Tự động đóng thông báo sau 5 giây
+  setTimeout(() => {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+      const closeButton = alert.querySelector('.btn-close');
+      if (closeButton) {
+        closeButton.click();
+      }
+    });
+  }, 5000);
+</script> 

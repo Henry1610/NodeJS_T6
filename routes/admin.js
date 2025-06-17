@@ -4,6 +4,7 @@ const rootDir = require('../util/path');
 const adminController = require('../controllers/admin');
 const categoryController = require('../controllers/categoryController');
 const brandController = require('../controllers/brandController');
+const orderController = require('../controllers/orderController');
 const upload = require('../middleware/file-upload');
 const authMiddleware = require('../middleware/auth');
 
@@ -13,6 +14,7 @@ const router = express.Router();
 router.use(authMiddleware.isAuth);
 router.use(authMiddleware.isAdmin);
 
+router.get('/dashboard', adminController.getProductStatistics);
 // ==========================
 // PRODUCT ROUTES
 // ==========================
@@ -51,26 +53,37 @@ router.post('/editbrand/:id', brandController.postEditBrand);
 router.get('/deletebrand/:id', brandController.deleteBrand);
 
 // ==========================
+// ORDER ROUTES
+// ==========================
+router.get('/orders', orderController.getAllOrders);
+router.get('/order/:orderId', orderController.getOrderDetail);
+router.post('/order/:orderId/update-status', orderController.updateOrderStatus);
+
+// ==========================
 // OTHER ROUTES / TEST
 // ==========================
-router.get('/test', (req, res) => {
-    res.render('pages/home');
-});
+// router.get('/test', (req, res) => {
+//     res.render('admin/dashboard');
+// });
+
+
 
 // ==========================
 // ERROR HANDLING
 // ==========================
 router.get('/404', (req, res) => {
-    res.render('pages/404', {
-        title: 'Lỗi'
+    res.render('404', {
+        title: 'Lỗi',
+        layout: false
     });
 });
 
 router.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(404).render('pages/404', {
+    res.status(404).render('404', {
         title: 'Lỗi',
-        error: err
+        error: err,
+        layout: false
     });
 });
 

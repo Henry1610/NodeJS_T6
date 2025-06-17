@@ -10,21 +10,19 @@ exports.getAddProduct = (req, res, next) => {
         Brand.fetchAll()
     ])
     .then(([categories, brands]) => {
-        res.render('pages/product/addproduct', { 
+        res.render('admin/product/addproduct', { 
             title: 'Add Product',
             categories,
             brands,
-            layout: '../../components/layouts',
             editing: false
         });
     })
     .catch(err => {
         console.error(err);
-        res.render('pages/product/addproduct', { 
+        res.render('admin/product/addproduct', { 
             title: 'Add Product',
             categories: [],
             brands: [],
-            layout: '../../components/layouts',
             editing: false
         });
     });
@@ -40,63 +38,96 @@ exports.postAddProduct = (req, res, next) => {
 
     const image = req.file; // lấy file từ multer
 
+    // Kiểm tra dữ liệu đầu vào
+    const errors = [];
+    
+    if (!title || title.trim().length === 0) {
+        errors.push("Vui lòng nhập tên sản phẩm");
+    }
+    
+    if (!price || isNaN(price) || price <= 0) {
+        errors.push("Vui lòng nhập giá hợp lệ");
+    }
+    
+    if (!category) {
+        errors.push("Vui lòng chọn danh mục");
+    }
+    
+    if (!brand) {
+        errors.push("Vui lòng chọn thương hiệu");
+    }
+    
+    if (!quantity || isNaN(quantity) || quantity < 0) {
+        errors.push("Vui lòng nhập số lượng hợp lệ");
+    }
+    
     if (!image) {
+        errors.push("Vui lòng tải lên hình ảnh sản phẩm");
+    }
+    
+    if (errors.length > 0) {
+        console.log("Lỗi khi thêm sản phẩm:", errors);
+        
         return Promise.all([
             Category.fetchAll(),
             Brand.fetchAll()
         ])
         .then(([categories, brands]) => {
-            return res.status(422).render('pages/product/addproduct', {
+            return res.status(422).render('admin/product/addproduct', {
                 title: 'Add Product',
-                errorMessage: 'Vui lòng tải lên hình ảnh sản phẩm',
+                errorMessage: errors.join(", "),
                 categories,
                 brands,
-                layout: '../../components/layouts'
+                oldInput: {
+                    title,
+                    price,
+                    category,
+                    brand,
+                    description,
+                    quantity
+                }
             });
         })
         .catch(err => {
             console.error(err);
-            res.status(500).render('pages/product/addproduct', {
-                title: 'Add Product',
-                errorMessage: 'Đã xảy ra lỗi khi thêm sản phẩm',
-                categories: [],
-                brands: [],
-                layout: '../../components/layouts'
-            });
+            res.redirect('/admin/addproduct?error=Đã xảy ra lỗi khi xử lý biểu mẫu');
         });
     }
 
     const imgUrl = '/images/' + image.filename;
 
     const product = new Product(null, title, imgUrl, description, price, category, brand, quantity);
+    
     product.save()
-        .then(() => {
+        .then(result => {
+            console.log('Thêm sản phẩm thành công:', title);
             res.redirect('/admin/productlist');
         })
         .catch(err => {
-            console.error(err);
+            console.error("Lỗi khi lưu sản phẩm:", err);
             return Promise.all([
                 Category.fetchAll(),
                 Brand.fetchAll()
             ])
             .then(([categories, brands]) => {
-                res.status(500).render('pages/product/addproduct', {
+                res.status(500).render('admin/product/addproduct', {
                     title: 'Add Product',
                     errorMessage: 'Đã xảy ra lỗi khi thêm sản phẩm: ' + err.message,
                     categories,
                     brands,
-                    layout: '../../components/layouts'
+                    oldInput: {
+                        title,
+                        price,
+                        category,
+                        brand,
+                        description,
+                        quantity
+                    }
                 });
             })
             .catch(fetchErr => {
                 console.error(fetchErr);
-                res.status(500).render('pages/product/addproduct', {
-                    title: 'Add Product',
-                    errorMessage: 'Đã xảy ra lỗi khi thêm sản phẩm',
-                    categories: [],
-                    brands: [],
-                    layout: '../../components/layouts'
-                });
+                res.redirect('/admin/addproduct?error=Đã xảy ra lỗi khi thêm sản phẩm');
             });
         });
 };
@@ -138,12 +169,11 @@ exports.getEditProduct = (req, res, next) => {
         product.categoryName = category ? category.name : 'N/A';
         product.brandName = brand ? brand.name : 'N/A';
         
-        res.render('pages/product/editproduct', {
+        res.render('admin/product/editproduct', {
             title: 'Edit Product',
             product: product,
             categories: categories,
-            brands: brands,
-            layout: '../../components/layouts'
+            brands: brands
         });
     })
     .catch(err => {
@@ -204,18 +234,16 @@ exports.postDeleteProduct = (req, res, next) => {
 exports.getProductList = (req, res, next) => {
     Product.fetchAll()
         .then(products => {
-            res.render('pages/product/productlist', {
+            res.render('admin/product/productlist', {
                 title: 'Product List',
-                products: products,
-                layout: '../../components/layouts'
+                products: products
             });
         })
         .catch(err => {
             console.log(err);
-            res.render('pages/product/productlist', {
+            res.render('admin/product/productlist', {
                 title: 'Product List',
-                products: [],
-                layout: '../../components/layouts'
+                products: []
             });
         });
 };
@@ -241,10 +269,9 @@ exports.getProductDetail = (req, res, next) => {
         product.categoryName = category ? category.name : 'N/A';
         product.brandName = brand ? brand.name : 'N/A';
         
-        res.render('pages/product/productdetail', {
+        res.render('admin/product/productdetail', {
             title: 'Product Detail',
-            product: product,
-            layout: '../../components/layouts'
+            product: product
         });
     })
     .catch(err => {
@@ -283,7 +310,7 @@ exports.getProductStatistics = (req, res, next) => {
       // Thống kê số lượng sản phẩm theo thương hiệu
       const productCountByBrand = lodashUtils.countByField(products, 'brandName');
       
-      res.render('pages/product/statistics', {
+      res.render('admin/product/statistics', {
         title: 'Thống kê sản phẩm',
         products,
         productsByCategory,
@@ -295,8 +322,7 @@ exports.getProductStatistics = (req, res, next) => {
         productsByBrand,
         productCountByCategory,
         productCountByBrand,
-        totalProducts: products.length,
-        layout: '../views/components/layouts.ejs'
+        totalProducts: products.length
       });
     })
     .catch(err => {
@@ -317,12 +343,11 @@ exports.searchProducts = (req, res, next) => {
       // Tìm kiếm sản phẩm
       const searchResults = lodashUtils.searchProducts(products, keyword, ['title', 'description', 'categoryName', 'brandName']);
       
-      res.render('pages/product/search-results', {
+      res.render('admin/product/search-results', {
         title: 'Kết quả tìm kiếm',
         products: searchResults,
         keyword: keyword,
-        totalResults: searchResults.length,
-        layout: '../../components/layouts'
+        totalResults: searchResults.length
       });
     })
     .catch(err => {

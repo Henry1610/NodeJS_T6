@@ -4,14 +4,14 @@ const Category = require('../models/category');
 exports.getCategoryList = (req, res) => {
     Category.fetchAll()
         .then(categories => {
-            res.render('pages/category/categorylist', {
+            res.render('admin/category/categorylist', {
                 title: 'Category List',
                 categories
             });
         })
         .catch(err => {
             console.log(err);
-            res.render('pages/category/categorylist', {
+            res.render('admin/category/categorylist', {
                 title: 'Category List',
                 categories: []
             });
@@ -20,7 +20,7 @@ exports.getCategoryList = (req, res) => {
 
 // Hiển thị form thêm danh mục
 exports.getAddCategory = (req, res) => {
-    res.render('pages/category/addcategory', { title: 'Add Category' });
+    res.render('admin/category/addcategory', { title: 'Add Category' });
 };
 
 // Xử lý thêm danh mục
@@ -31,7 +31,7 @@ exports.postAddCategory = (req, res) => {
         .then(() => res.redirect('/admin/categorylist'))
         .catch(err => {
             console.error('Error adding category:', err);
-            res.status(500).render('pages/category/addcategory', {
+            res.status(500).render('admin/category/addcategory', {
                 title: 'Add Category',
                 error: 'Có lỗi xảy ra khi thêm danh mục. Vui lòng thử lại.'
             });
@@ -43,7 +43,7 @@ exports.getEditCategory = (req, res) => {
     Category.findById(req.params.id)
         .then(category => {
             if (!category) return res.redirect('/admin/categorylist');
-            res.render('pages/category/editcategory', {
+            res.render('admin/category/editcategory', {
                 title: 'Edit Category',
                 category
             });

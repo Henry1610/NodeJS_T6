@@ -21,28 +21,38 @@ module.exports = class Product {
         this.brand = new mongodb.ObjectId(brand); // Thêm brand (dưới dạng ObjectId)
         this.imgUrl = imgUrl;
         this.description = description;       
-        this.quantity = quantity;
+        this.quantity = parseInt(quantity) || 0; // Chuyển đổi quantity sang số
         this.price = price;
     }
 
     save() {
         const db = getDb();
         let dbOp;
-        if (this._id) {
-            console.log('Update item');
-            dbOp = db.collection('products').updateOne({ _id: new mongodb.ObjectId(this._id) }, { $set: this })
+        try {
+            if (this._id) {
+                console.log('Update product:', this.title);
+                dbOp = db.collection('products').updateOne(
+                    { _id: new mongodb.ObjectId(this._id) }, 
+                    { $set: this }
+                );
+            } else {
+                console.log('Insert new product:', this.title);
+                dbOp = db.collection('products').insertOne(this);
+            }
+            
+            return dbOp
+                .then(result => {
+                    console.log('Product saved successfully:', result);
+                    return result;
+                })
+                .catch(err => {
+                    console.error('Database error when saving product:', err);
+                    throw new Error('Lỗi khi lưu sản phẩm vào cơ sở dữ liệu: ' + err.message);
+                });
+        } catch (error) {
+            console.error('Error in save method:', error);
+            return Promise.reject(error);
         }
-        else {
-            dbOp = db.collection('products').insertOne(this)
-        }
-        return dbOp
-            .then(result => {
-                console.log(result);
-            })
-            .catch(err => {
-                console.log(err);
-            });
-
     }
 
     static fetchAll(limit = 0) {

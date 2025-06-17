@@ -1,0 +1,44 @@
+<%- contentFor('body') %>
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-8">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body text-center py-5">
+          <div class="mb-4">
+            <i class="fas fa-check-circle text-success fa-5x"></i>
+          </div>
+          <h1 class="h2 mb-3">Đặt hàng thành công!</h1>
+          <p class="lead">Cảm ơn bạn đã mua sắm tại KlaveStore. Đơn hàng của bạn đã được tiếp nhận và đang được xử lý.</p>
+          
+          <div class="card bg-light mt-4 mb-4">
+            <div class="card-body">
+              <div class="d-flex justify-content-between mb-2">
+                <span>Mã đơn hàng:</span>
+                <span class="fw-bold"><%= orderId %></span>
+              </div>
+              <div class="d-flex justify-content-between">
+                <span>Trạng thái đơn hàng:</span>
+                <span class="badge bg-warning text-dark">Chờ xác nhận</span>
+              </div>
+            </div>
+          </div>
+          
+          <p>Bạn có thể theo dõi tình trạng đơn hàng trong mục <strong>"Lịch sử mua hàng"</strong></p>
+          
+          <div class="mt-4">
+            <a href="/user/order/<%= orderId %>" class="btn btn-primary me-2">
+              <i class="fas fa-eye me-2"></i>Xem chi tiết đơn hàng
+            </a>
+            <a href="/user/orders" class="btn btn-outline-primary me-2">
+              <i class="fas fa-history me-2"></i>Lịch sử mua hàng
+            </a>
+            <a href="/user/products" class="btn btn-outline-secondary">
+              <i class="fas fa-shopping-basket me-2"></i>Tiếp tục mua sắm
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 

@@ -1,0 +1,28 @@
+<div class="content">
+    <div class="page-header">
+        <div class="page-title">
+            <h4>Product Add Category</h4>
+            <h6>Create new product Category</h6>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form action="/admin/addcategory" method="POST">
+                <div class="row">
+                    <div class="col-lg-6 col-sm-6 col-12">
+                        <div class="form-group">
+                            <label>Category Name</label>
+                            <input type="text" name="name" required>
+                        </div>
+                    </div>
+                    
+                    <div class="col-lg-12">
+                        <button type="submit" class="btn btn-submit me-2">Submit</button>
+                        <a href="/admin/categorylist" class="btn btn-cancel">Back</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

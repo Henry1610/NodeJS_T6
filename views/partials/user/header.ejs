@@ -1,0 +1,88 @@
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary bg-gradient shadow-sm">
+        <div class="container">
+            <!-- Logo -->
+            <a class="navbar-brand d-flex align-items-center fw-bold" href="/user">
+                <i class="fas fa-store me-2"></i> KlaveStore
+            </a>
+
+            <!-- Toggler for Mobile -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Chuyển đổi điều hướng">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Navbar Content -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <!-- Navigation Links -->
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    <li class="nav-item">
+                        <a class="nav-link <%= path === '/user' ? 'active' : '' %> px-3" href="/user">
+                            <i class="fas fa-home me-1"></i>Trang chủ
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <%= path === '/user/products' ? 'active' : '' %> px-3" href="/user/products">
+                            <i class="fas fa-shopping-basket me-1"></i>Sản phẩm
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <%= path === '/user/orders' ? 'active' : '' %> px-3" href="/user/orders">
+                            <i class="fas fa-history me-1"></i>Lịch sử 
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <%= path === '/user/about' ? 'active' : '' %> px-3" href="/user/about">Giới thiệu</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link <%= path === '/user/contact' ? 'active' : '' %> px-3" href="/user/contact">Nguyên Trường</a>
+                    </li>
+                </ul>
+
+                <!-- Search Form with Icon Inside -->
+                <form class="d-flex mb-2 mb-lg-0 me-lg-3" action="/user/search" method="GET">
+                    <div class="input-group rounded-pill">
+                        <span class="input-group-text bg-transparent border-0 pe-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input class="form-control rounded-pill border-0" type="search" name="q" placeholder=" Tìm kiếm sản phẩm..." aria-label="Tìm kiếm">
+                    </div>
+                </form>
+
+                <!-- User Actions -->
+                <% if (isAuthenticated) { %>
+                    <!-- Authenticated User: Dropdown and Cart -->
+                    <div class="d-flex align-items-center">
+                        <div class="nav-item dropdown me-2">
+                            <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle me-2"></i>
+                                <%= user.email %>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="/user/profile"><i class="fas fa-user me-2"></i>Tài khoản của tôi</a></li>
+                                <li><a class="dropdown-item" href="/user/orders"><i class="fas fa-shopping-bag me-2"></i>Lịch sử đơn hàng</a></li>
+                                <% if (isAdmin) { %>
+                                    <li><a class="dropdown-item" href="/admin/dashboard"><i class="fas fa-tachometer-alt me-2"></i> Quản trị</a></li>
+                                <% } %>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="/logout"><i class="fas fa-sign-out-alt me-2"></i> Đăng xuất</a></li>
+                            </ul>
+                        </div>
+                        <a href="/user/cart" class="btn btn-outline-light rounded-pill">
+                            <i class="fas fa-shopping-cart me-1"></i> 
+                        </a>
+                    </div>
+                <% } else { %>
+                    <!-- Non-Authenticated User: Login and Register -->
+                    <div class="d-flex">
+                        <a href="/login" class="btn btn-outline-light rounded-pill me-2">
+                            <i class="fas fa-sign-in-alt me-1"></i> Đăng nhập
+                        </a>
+                        <a href="/register" class="btn btn-light rounded-pill">
+                            <i class="fas fa-user-plus me-1"></i> Đăng ký
+                        </a>
+                    </div>
+                <% } %>
+            </div>
+        </div>
+    </nav>
+</header>

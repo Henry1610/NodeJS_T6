@@ -1,0 +1,43 @@
+<%- contentFor('body') %>
+
+<div class="container mt-5">
+  <div class="row justify-content-center">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h3 class="mb-0">Đăng ký tài khoản</h3>
+        </div>
+        <div class="card-body">
+          <% if (typeof errorMessage !== 'undefined') { %>
+            <div class="alert alert-danger" role="alert">
+              <%= errorMessage %>
+            </div>
+          <% } %>
+          
+          <form action="/register" method="POST">
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input type="email" class="form-control" id="email" name="email" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Mật khẩu</label>
+              <input type="password" class="form-control" id="password" name="password" required minlength="6">
+              <small class="form-text text-muted">Mật khẩu phải có ít nhất 6 ký tự</small>
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Xác nhận mật khẩu</label>
+              <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required minlength="6">
+            </div>
+            <div class="form-group">
+              <button type="submit" class="btn btn-primary btn-block">Đăng ký</button>
+            </div>
+          </form>
+          
+          <div class="text-center mt-3">
+            <p>Đã có tài khoản? <a href="/login">Đăng nhập</a></p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

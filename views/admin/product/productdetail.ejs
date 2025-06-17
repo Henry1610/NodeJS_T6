@@ -1,0 +1,90 @@
+<div class="page-wrapper">
+    <div class="content">
+        <div class="page-header">
+            <div class="page-title">
+                <h4>Product Details</h4>
+                <h6>Full details of a product</h6>
+            </div>
+            <div class="page-btn">
+                <a href="/admin/productlist" class="btn btn-added">
+                    <i class="fa fa-arrow-left"></i> Back
+                </a>
+            </div>
+        </div>
+    
+        <div class="row">
+            <div class="col-lg-8 col-sm-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="bar-code-view">
+                            <img src="/template/img/barcode1.png" alt="barcode">
+                            <a class="printimg">
+                                <img src="/template/img/icons/printer.svg" alt="print">
+                            </a>
+                        </div>
+                        <div class="productdetails">
+                            <ul class="product-bar">
+                                <li>
+                                    <h4>Product</h4>
+                                    <h6><%= product.title %></h6>
+                                </li>
+                                <li>
+                                    <h4>Category</h4>
+                                    <h6><%= product.categoryName %></h6>
+                                </li>
+                                
+                                <li>
+                                    <h4>Brand</h4>
+                                    <h6><%= product.brandName %></h6>
+                                </li>
+                                
+                                <li>
+                                    <h4>ID</h4>
+                                    <h6><%= product._id %></h6>
+                                </li>
+                                
+                                <li>
+                                    <h4>Quantity</h4>
+                                    <h6><%= product.quantity %></h6>
+                                </li>
+                                
+                                
+                                <li> 
+                                    <h4>Price</h4>
+                                    <h6><%= product.price %></h6>
+                                </li>
+                                
+                                <li>
+                                    <h4>Description</h4>
+                                    <h6><%= product.description %></h6>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-sm-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="product-img">
+                            <img src="<%= product.imgUrl %>" alt="product image" class="img-fluid">
+                        </div>
+                        <div class="mt-4">
+                            <a href="/admin/editproduct/<%= product._id %>" class="btn btn-primary me-2">
+                                <i class="fa fa-edit"></i> Edit Product
+                            </a>
+                            <form action="/admin/delete-product" method="POST" style="display:inline;">
+                                <input type="hidden" name="productId" value="<%= product._id %>">
+                                <button type="submit" class="btn btn-danger">
+                                    <i class="fa fa-trash"></i> Delete Product
+                                </button>
+                            </form>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    </div>
+</div>

@@ -3,13 +3,18 @@ const MongoClient = mongodb.MongoClient;
 let db;
 
 const mongoConnect = () => {
-    return MongoClient.connect('mongodb+srv://ITCschool:NPKUnuDaGRt8Yvwx@cluster0.jtjkj.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0', {
+    const uri = 'mongodb+srv://ITCschool:NPKUnuDaGRt8Yvwx@cluster0.jtjkj.mongodb.net/shop?retryWrites=true&w=majority';
+    
+    return MongoClient.connect(uri, {
         useNewUrlParser: true,
-        useUnifiedTopology: true
+        useUnifiedTopology: true,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        family: 4
     })
     .then(client => {
-        console.log('✅ Kết nối MongoDB thành công!');
         db = client.db('shop');
+        console.log('✅ Đã kết nối thành công với MongoDB');
         return db;
     })
     .catch(err => {
