@@ -1,0 +1,261 @@
+<%- contentFor('body') %>
+
+<div class="container-fluid p-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Yêu cầu hủy đơn hàng</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h2 mb-0">Yêu cầu hủy đơn hàng</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="mb-0">Danh sách yêu cầu hủy</h5>
+                </div>
+                <div class="card-body p-0">
+                    <% if (cancelRequests && cancelRequests.length > 0) { %>
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>Mã đơn hàng</th>
+                                        <th>Khách hàng</th>
+                                        <th>Thanh toán</th>
+                                        <th>Ngày yêu cầu</th>
+                                        <th>Lý do</th>
+                                        <th>Trạng thái</th>
+                                        <th>Hoàn tiền</th>
+                                        <th>Thao tác</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% cancelRequests.forEach(request => { %>
+                                        <tr>
+                                            <td>
+                                                <a href="/admin/order/<%= request.orderId %>" class="text-decoration-none">
+                                                    #<%= request.orderId.toString().substring(request.orderId.toString().length - 6) %>
+                                                </a>
+                                            </td>
+                                            <td>
+                                                <div>
+                                                    <div class="fw-bold"><%= request.user.email %></div>
+                                                    <small class="text-muted">ID: <%= request.userId.toString().substring(request.userId.toString().length - 6) %></small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <% if (request.order.paymentInfo && request.order.paymentInfo.method === 'VNPay') { %>
+                                                    <span class="badge bg-primary">
+                                                        <i class="fas fa-credit-card me-1"></i>VNPay
+                                                    </span>
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        <%= new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(request.order.paymentInfo.finalAmount) %>
+                                                    </small>
+                                                <% } else { %>
+                                                    <span class="badge bg-secondary">
+                                                        <i class="fas fa-money-bill me-1"></i>COD
+                                                    </span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <%= new Date(request.createdAt).toLocaleDateString('vi-VN', {
+                                                    year: 'numeric',
+                                                    month: '2-digit',
+                                                    day: '2-digit',
+                                                    hour: '2-digit',
+                                                    minute: '2-digit'
+                                                }) %>
+                                            </td>
+                                            <td>
+                                                <% if (request.reason) { %>
+                                                    <span class="text-truncate d-inline-block" style="max-width: 200px;" title="<%= request.reason %>">
+                                                        <%= request.reason %>
+                                                    </span>
+                                                <% } else { %>
+                                                    <span class="text-muted">Không có lý do</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (request.status === 'Chờ xử lý') { %>
+                                                    <span class="badge bg-warning text-dark">Chờ xử lý</span>
+                                                <% } else if (request.status === 'Đã chấp nhận') { %>
+                                                    <span class="badge bg-success">Đã chấp nhận</span>
+                                                <% } else if (request.status === 'Đã từ chối') { %>
+                                                    <span class="badge bg-danger">Đã từ chối</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (request.status === 'Đã chấp nhận' && request.order.paymentInfo && request.order.paymentInfo.method === 'VNPay') { %>
+                                                    <% if (request.order.refundInfo) { %>
+                                                        <% if (request.order.refundInfo.refundStatus === 'pending') { %>
+                                                            <span class="badge bg-warning text-dark">
+                                                                <i class="fas fa-clock me-1"></i>Chờ hoàn tiền
+                                                            </span>
+                                                            <br>
+                                                            <a href="<%= request.order.refundInfo.refundUrl %>" target="_blank" 
+                                                               class="btn btn-sm btn-outline-primary mt-1">
+                                                                <i class="fas fa-external-link-alt me-1"></i>Hoàn tiền VNPay
+                                                            </a>
+                                                        <% } else if (request.order.refundInfo.refundStatus === 'completed') { %>
+                                                            <span class="badge bg-success">
+                                                                <i class="fas fa-check me-1"></i>Đã hoàn tiền
+                                                            </span>
+                                                            <br>
+                                                            <small class="text-muted">
+                                                                <%= new Date(request.order.refundInfo.completedAt).toLocaleDateString('vi-VN') %>
+                                                            </small>
+                                                        <% } else if (request.order.refundInfo.refundStatus === 'failed') { %>
+                                                            <span class="badge bg-danger">
+                                                                <i class="fas fa-times me-1"></i>Hoàn tiền thất bại
+                                                            </span>
+                                                            <br>
+                                                            <small class="text-muted">
+                                                                <%= request.order.refundInfo.errorMessage || 'Lỗi không xác định' %>
+                                                            </small>
+                                                        <% } %>
+                                                    <% } else { %>
+                                                        <span class="badge bg-secondary">
+                                                            <i class="fas fa-question me-1"></i>Chưa tạo hoàn tiền
+                                                        </span>
+                                                    <% } %>
+                                                <% } else if (request.status === 'Đã chấp nhận' && (!request.order.paymentInfo || request.order.paymentInfo.method === 'COD')) { %>
+                                                    <span class="badge bg-info">
+                                                        <i class="fas fa-info me-1"></i>COD - Không cần hoàn tiền
+                                                    </span>
+                                                <% } else { %>
+                                                    <span class="text-muted">-</span>
+                                                <% } %>
+                                            </td>
+                                            <td>
+                                                <% if (request.status === 'Chờ xử lý') { %>
+                                                    <button type="button" class="btn btn-success btn-sm me-1" 
+                                                            onclick="processRequest('<%= request._id %>', 'approve')">
+                                                        <i class="fas fa-check me-1"></i>Chấp nhận
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" 
+                                                            onclick="processRequest('<%= request._id %>', 'reject')">
+                                                        <i class="fas fa-times me-1"></i>Từ chối
+                                                    </button>
+                                                <% } else { %>
+                                                    <small class="text-muted">
+                                                        <%= request.processedAt ? new Date(request.processedAt).toLocaleDateString('vi-VN') : '' %>
+                                                    </small>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                    <% }); %>
+                                </tbody>
+                            </table>
+                        </div>
+                    <% } else { %>
+                        <div class="text-center py-4">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Không có yêu cầu hủy nào</h5>
+                            <p class="text-muted">Tất cả yêu cầu hủy đã được xử lý hoặc chưa có yêu cầu nào.</p>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal xử lý yêu cầu hủy -->
+<div class="modal fade" id="processRequestModal" tabindex="-1" aria-labelledby="processRequestModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="processRequestModalLabel">Xử lý yêu cầu hủy</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="processRequestForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="adminNote" class="form-label">Ghi chú (không bắt buộc):</label>
+                        <textarea class="form-control" id="adminNote" name="adminNote" rows="3" 
+                                  placeholder="Nhập ghi chú cho khách hàng (nếu có)"></textarea>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <span id="actionDescription"></span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn" id="confirmButton">
+                        <i class="fas fa-check me-2"></i>Xác nhận
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentRequestId = null;
+    let currentAction = null;
+
+    function processRequest(requestId, action) {
+        currentRequestId = requestId;
+        currentAction = action;
+        
+        const modal = new bootstrap.Modal(document.getElementById('processRequestModal'));
+        const actionDescription = document.getElementById('actionDescription');
+        const confirmButton = document.getElementById('confirmButton');
+        
+        if (action === 'approve') {
+            actionDescription.textContent = 'Khi chấp nhận, đơn hàng sẽ được hủy. Nếu thanh toán qua VNPay, hệ thống sẽ tạo URL hoàn tiền để admin thực hiện hoàn tiền cho khách hàng.';
+            confirmButton.className = 'btn btn-success';
+            confirmButton.innerHTML = '<i class="fas fa-check me-2"></i>Chấp nhận';
+        } else {
+            actionDescription.textContent = 'Khi từ chối, yêu cầu hủy sẽ bị từ chối và đơn hàng vẫn tiếp tục xử lý.';
+            confirmButton.className = 'btn btn-danger';
+            confirmButton.innerHTML = '<i class="fas fa-times me-2"></i>Từ chối';
+        }
+        
+        modal.show();
+    }
+
+    document.getElementById('processRequestForm').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const adminNote = document.getElementById('adminNote').value;
+        
+        try {
+            const response = await fetch(`/admin/cancel-request/${currentRequestId}/process`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: currentAction,
+                    adminNote: adminNote
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert(result.message);
+                location.reload();
+            } else {
+                alert('Lỗi: ' + result.message);
+            }
+        } catch (error) {
+            alert('Đã xảy ra lỗi khi xử lý yêu cầu.');
+            console.error(error);
+        }
+    });
+</script> 

@@ -68,6 +68,68 @@
                             <p><strong>Địa chỉ giao hàng:</strong> <%= order.user.address || 'Không có thông tin' %></p>
                             <p><strong>Phương thức thanh toán:</strong> COD (Thanh toán khi nhận hàng)</p>
                         </div>
+                        
+                        <% if (order.shippingInfo) { %>
+                        <div class="col-12 mt-3">
+                            <hr>
+                            <h6 class="fw-bold">Thông tin giao hàng:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Họ và tên:</strong> <%= order.shippingInfo.fullName %></p>
+                                    <p><strong>Số điện thoại:</strong> <%= order.shippingInfo.phone %></p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Địa chỉ:</strong> <%= order.shippingInfo.address %></p>
+                                    <% if (order.shippingInfo.note) { %>
+                                        <p><strong>Ghi chú:</strong> <%= order.shippingInfo.note %></p>
+                                    <% } %>
+                                </div>
+                            </div>
+                        </div>
+                        <% } %>
+                        
+                        <% if (order.paymentInfo) { %>
+                        <div class="col-12 mt-3">
+                            <hr>
+                            <h6 class="fw-bold">Thông tin thanh toán:</h6>
+                            <p><strong>Phương thức:</strong> <%= order.paymentInfo.method === 'VNPay' ? 'VNPay' : 'Thanh toán khi nhận hàng (COD)' %></p>
+                            <% if (order.paymentInfo.discountCode) { %>
+                                <p><strong>Mã giảm giá:</strong> <%= order.paymentInfo.discountCode %></p>
+                            <% } %>
+                            <% if (order.paymentInfo.finalAmount) { %>
+                                <p><strong>Số tiền thanh toán:</strong> <%= order.paymentInfo.finalAmount.toLocaleString('vi-VN') %> VNĐ</p>
+                            <% } %>
+                        </div>
+                        <% } %>
+
+                        <% if (order.refundInfo) { %>
+                        <div class="col-12 mt-3">
+                            <hr>
+                            <h6 class="fw-bold">Thông tin hoàn tiền:</h6>
+                            <p><strong>Mã giao dịch hoàn tiền:</strong> <%= order.refundInfo.refundTxnRef %></p>
+                            <p><strong>Số tiền hoàn:</strong> <%= order.refundInfo.refundAmount.toLocaleString('vi-VN') %> VNĐ</p>
+                            <p><strong>Trạng thái:</strong> 
+                                <% if (order.refundInfo.refundStatus === 'pending') { %>
+                                    <span class="badge bg-warning text-dark">Chờ hoàn tiền</span>
+                                <% } else if (order.refundInfo.refundStatus === 'completed') { %>
+                                    <span class="badge bg-success">Đã hoàn tiền</span>
+                                <% } else if (order.refundInfo.refundStatus === 'failed') { %>
+                                    <span class="badge bg-danger">Hoàn tiền thất bại</span>
+                                <% } %>
+                            </p>
+                            <% if (order.refundInfo.refundStatus === 'pending') { %>
+                                <a href="<%= order.refundInfo.refundUrl %>" target="_blank" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-external-link-alt me-1"></i>Thực hiện hoàn tiền VNPay
+                                </a>
+                            <% } %>
+                            <% if (order.refundInfo.completedAt) { %>
+                                <p><strong>Ngày hoàn tiền:</strong> <%= new Date(order.refundInfo.completedAt).toLocaleDateString('vi-VN') %></p>
+                            <% } %>
+                            <% if (order.refundInfo.errorMessage) { %>
+                                <p><strong>Lỗi:</strong> <span class="text-danger"><%= order.refundInfo.errorMessage %></span></p>
+                            <% } %>
+                        </div>
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -150,14 +212,27 @@
                         <span>Phí vận chuyển:</span>
                         <span><%= order.shippingFee.toLocaleString('vi-VN') %> VNĐ</span>
                     </div>
+                    
+                    <% if (order.paymentInfo && order.paymentInfo.discountCode && order.paymentInfo.discountValue > 0) { %>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Mã giảm giá <%= order.paymentInfo.discountCode %>:</span>
+                        <span class="text-success fw-bold">-<%= order.paymentInfo.discountValue.toLocaleString('vi-VN') %> VNĐ</span>
+                    </div>
+                    <% } else { %>
                     <div class="d-flex justify-content-between mb-2">
                         <span>Khuyến mãi:</span>
                         <span>0 VNĐ</span>
                     </div>
+                    <% } %>
+                    
                     <hr>
                     <div class="d-flex justify-content-between">
                         <span class="fw-bold">Tổng thanh toán:</span>
-                        <span class="fw-bold text-primary h5"><%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ</span>
+                        <% if (order.paymentInfo && order.paymentInfo.finalAmount) { %>
+                            <span class="fw-bold text-primary h5"><%= order.paymentInfo.finalAmount.toLocaleString('vi-VN') %> VNĐ</span>
+                        <% } else { %>
+                            <span class="fw-bold text-primary h5"><%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ</span>
+                        <% } %>
                     </div>
                 </div>
             </div>

@@ -105,6 +105,46 @@ app.get('/api/check-payment-vnpay', (req, res) => {
   }
 });
 
+// VNPay refund callback endpoint
+app.get('/api/check-refund-vnpay', async (req, res) => {
+  console.log('VNPay refund callback data:', req.query);
+  
+  const vnp_ResponseCode = req.query.vnp_ResponseCode;
+  const vnp_TxnRef = req.query.vnp_TxnRef;
+  const vnp_Amount = req.query.vnp_Amount;
+  
+  try {
+    const Order = require('./models/Order');
+    
+    if (vnp_ResponseCode === '00') {
+      // Hoàn tiền thành công
+      const refundAmount = parseInt(vnp_Amount) / 100;
+      
+      // Cập nhật trạng thái hoàn tiền trong database
+      await Order.updateRefundStatus(vnp_TxnRef, 'completed', {
+        completedAt: new Date(),
+        responseCode: vnp_ResponseCode
+      });
+      
+      console.log(`VNPay refund successful for ${vnp_TxnRef}, amount: ${refundAmount}`);
+      return res.redirect('/admin/cancel-requests?success=Hoàn tiền VNPay thành công');
+    } else {
+      // Hoàn tiền thất bại
+      await Order.updateRefundStatus(vnp_TxnRef, 'failed', {
+        failedAt: new Date(),
+        responseCode: vnp_ResponseCode,
+        errorMessage: req.query.vnp_Message || 'Hoàn tiền thất bại'
+      });
+      
+      console.log(`VNPay refund failed for ${vnp_TxnRef}, response code: ${vnp_ResponseCode}`);
+      return res.redirect('/admin/cancel-requests?error=Hoàn tiền VNPay thất bại');
+    }
+  } catch (error) {
+    console.error('Lỗi xử lý callback hoàn tiền VNPay:', error);
+    return res.redirect('/admin/cancel-requests?error=Lỗi xử lý hoàn tiền');
+  }
+});
+
 // Route test để kiểm tra VNPay callback
 app.get('/test-vnpay-callback', (req, res) => {
   console.log('Test VNPay callback - All query params:', req.query);
@@ -112,6 +152,84 @@ app.get('/test-vnpay-callback', (req, res) => {
     message: 'Test VNPay callback received',
     query: req.query
   });
+});
+
+// Route test để tạo hoàn tiền VNPay
+app.post('/api/test-refund', async (req, res) => {
+  try {
+    const { orderId } = req.body;
+    
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu mã đơn hàng'
+      });
+    }
+
+    const Order = require('./models/Order');
+    const order = await Order.getOrderById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng'
+      });
+    }
+
+    if (!order.paymentInfo || order.paymentInfo.method !== 'VNPay') {
+      return res.status(400).json({
+        success: false,
+        message: 'Đơn hàng không thanh toán qua VNPay'
+      });
+    }
+
+    const {VNPay, ProductCode, dateFormat} = require('vnpay');
+    
+    const vnpay = new VNPay({
+      tmnCode: 'PX2DIOF7',
+      secureSecret: '19A2ZLVXKMDZ0YIJ2DDPYAY8LPB7I8FF',
+      vnpayHost: 'https://sandbox.vnpayment.vn/',
+      testMode: true,
+      hashAlgorithm: 'SHA512',
+      logger: fn => fn,
+    });
+
+    const refundTxnRef = `TEST_REFUND_${order._id}_${Date.now()}`;
+    const refundAmount = Math.round(order.paymentInfo.finalAmount * 100);
+    
+    const refundUrl = await vnpay.buildRefundUrl({
+      vnp_Amount: refundAmount,
+      vnp_OrderInfo: `Test hoan tien don hang ${order._id}`,
+      vnp_OrderType: ProductCode.Other,
+      vnp_TxnRef: refundTxnRef,
+      vnp_TransactionType: '02',
+      vnp_TransactionNo: order._id.toString(),
+      vnp_CreateDate: dateFormat(new Date()),
+      vnp_IpAddr: '127.0.0.1',
+      vnp_ReturnUrl: 'http://localhost:3000/api/check-refund-vnpay'
+    });
+
+    await Order.saveRefundInfo(order._id, {
+      refundTxnRef: refundTxnRef,
+      refundAmount: order.paymentInfo.finalAmount,
+      refundUrl: refundUrl,
+      refundStatus: 'pending',
+      refundDate: new Date()
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: 'Tạo URL hoàn tiền thành công',
+      refundUrl: refundUrl,
+      refundTxnRef: refundTxnRef
+    });
+  } catch (error) {
+    console.error('Lỗi test hoàn tiền:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi tạo URL hoàn tiền: ' + error.message
+    });
+  }
 });
 
 //Khai báo engine

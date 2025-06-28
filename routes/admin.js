@@ -60,6 +60,12 @@ router.get('/order/:orderId', orderController.getOrderDetail);
 router.post('/order/:orderId/update-status', orderController.updateOrderStatus);
 
 // ==========================
+// CANCEL REQUEST ROUTES
+// ==========================
+router.get('/cancel-requests', orderController.getCancelRequests);
+router.post('/cancel-request/:requestId/process', orderController.processCancelRequest);
+
+// ==========================
 // OTHER ROUTES / TEST
 // ==========================
 // router.get('/test', (req, res) => {

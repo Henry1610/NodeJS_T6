@@ -93,6 +93,143 @@ class Order {
             }
         );
     }
+
+    // Tạo yêu cầu hủy đơn hàng
+    static async createCancelRequest(orderId, userId, reason = '') {
+        const db = getDb();
+        const cancelRequest = {
+            orderId: new ObjectId(orderId),
+            userId: new ObjectId(userId),
+            reason: reason,
+            status: 'Chờ xử lý', // Chờ xử lý, Đã chấp nhận, Đã từ chối
+            createdAt: new Date(),
+            processedAt: null,
+            processedBy: null
+        };
+        
+        return db.collection('cancelRequests').insertOne(cancelRequest);
+    }
+
+    // Lấy yêu cầu hủy theo ID đơn hàng
+    static async getCancelRequestByOrderId(orderId) {
+        const db = getDb();
+        return db.collection('cancelRequests').findOne({ 
+            orderId: new ObjectId(orderId) 
+        });
+    }
+
+    // Lấy yêu cầu hủy theo ID
+    static async getCancelRequestById(requestId) {
+        const db = getDb();
+        return db.collection('cancelRequests').findOne({ 
+            _id: new ObjectId(requestId) 
+        });
+    }
+
+    // Lưu thông tin hoàn tiền
+    static async saveRefundInfo(orderId, refundInfo) {
+        const db = getDb();
+        return db.collection('orders').updateOne(
+            { _id: new ObjectId(orderId) },
+            { 
+                $set: { 
+                    refundInfo: refundInfo,
+                    updatedAt: new Date()
+                } 
+            }
+        );
+    }
+
+    // Cập nhật trạng thái hoàn tiền
+    static async updateRefundStatus(refundTxnRef, status, additionalInfo = {}) {
+        const db = getDb();
+        return db.collection('orders').updateOne(
+            { 'refundInfo.refundTxnRef': refundTxnRef },
+            { 
+                $set: { 
+                    'refundInfo.refundStatus': status,
+                    'refundInfo.updatedAt': new Date(),
+                    ...additionalInfo
+                } 
+            }
+        );
+    }
+
+    // Lấy tất cả yêu cầu hủy (cho admin)
+    static async getAllCancelRequests() {
+        const db = getDb();
+        return db.collection('cancelRequests')
+            .aggregate([
+                {
+                    $lookup: {
+                        from: 'orders',
+                        localField: 'orderId',
+                        foreignField: '_id',
+                        as: 'order'
+                    }
+                },
+                {
+                    $lookup: {
+                        from: 'users',
+                        localField: 'userId',
+                        foreignField: '_id',
+                        as: 'user'
+                    }
+                },
+                {
+                    $unwind: '$order'
+                },
+                {
+                    $unwind: '$user'
+                },
+                {
+                    $sort: { createdAt: -1 }
+                }
+            ]).toArray();
+    }
+
+    // Xử lý yêu cầu hủy (admin)
+    static async processCancelRequest(requestId, adminId, action, adminNote = '') {
+        const db = getDb();
+        
+        const updateData = {
+            status: action === 'approve' ? 'Đã chấp nhận' : 'Đã từ chối',
+            processedAt: new Date(),
+            processedBy: new ObjectId(adminId),
+            adminNote: adminNote
+        };
+
+        // Cập nhật trạng thái yêu cầu hủy
+        await db.collection('cancelRequests').updateOne(
+            { _id: new ObjectId(requestId) },
+            { $set: updateData }
+        );
+
+        // Nếu chấp nhận, hủy đơn hàng và khôi phục kho
+        if (action === 'approve') {
+            const request = await db.collection('cancelRequests').findOne({ 
+                _id: new ObjectId(requestId) 
+            });
+            
+            if (request) {
+                // Hủy đơn hàng
+                await this.cancelOrder(request.orderId);
+                
+                // Khôi phục số lượng sản phẩm trong kho
+                const order = await this.getOrderById(request.orderId);
+                if (order) {
+                    for (const item of order.items) {
+                        await db.collection('products').updateOne(
+                            { _id: new ObjectId(item.productId) },
+                            { $inc: { quantity: item.quantity } }
+                        );
+                    }
+                }
+            }
+        }
+
+        return true;
+    }
 }
 
 module.exports = Order; 
