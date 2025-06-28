@@ -6,6 +6,7 @@ const Order = require('../models/Order');
 const mongodb = require('mongodb');
 const User = require('../models/User');
 const Review = require('../models/Review');
+const { sendMail } = require('../util/mailer');
 
 // Trang chủ cho người dùng
 exports.getHomePage = async (req, res, next) => {
@@ -271,7 +272,7 @@ exports.getOrderSuccess = async (req, res, next) => {
   }
 };
 
-// Sửa phương thức checkout để trả về link đến trang thành công thay vì chỉ trả về JSON
+// Sửa phương thức checkout để gửi email xác nhận đơn hàng
 exports.checkout = async (req, res, next) => {
   try {
     // Không kiểm tra đăng nhập
@@ -388,6 +389,24 @@ exports.checkout = async (req, res, next) => {
     
     if (!result || !result.insertedId) {
       throw new Error('Không thể lưu đơn hàng vào cơ sở dữ liệu');
+    }
+
+    // Gửi email xác nhận đơn hàng cho khách hàng
+    try {
+      const email = req.session.user.email;
+      const subject = 'Xác nhận đặt hàng thành công';
+      const html = `
+        <h2>Xin chào ${fullName || req.session.user.email},</h2>
+        <p>Bạn đã đặt hàng thành công trên hệ thống của chúng tôi.</p>
+        <p><strong>Mã đơn hàng:</strong> ${result.insertedId}</p>
+        <p><strong>Tổng tiền:</strong> ${finalAmount.toLocaleString('vi-VN')} VNĐ</p>
+        <p><strong>Trạng thái:</strong> Chờ xác nhận</p>
+        <hr>
+        <p>Cảm ơn bạn đã mua sắm!</p>
+      `;
+      await sendMail(email, subject, html);
+    } catch (mailErr) {
+      console.error('Lỗi gửi email xác nhận đơn hàng:', mailErr);
     }
 
     // Cập nhật số lượng sản phẩm trong kho
