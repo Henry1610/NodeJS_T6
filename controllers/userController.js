@@ -290,7 +290,15 @@ exports.checkout = async (req, res, next) => {
       });
     }
 
-    // Tính tổng tiền
+    // Lấy thông tin từ request body (đã được tính toán từ frontend)
+    const { fullName, phone, address, note, paymentMethod, discountCode, discountValue, amount } = req.body;
+    
+    console.log('Checkout data from frontend:', { 
+      fullName, phone, address, note, paymentMethod, 
+      discountCode, discountValue, amount 
+    });
+
+    // Tính tổng tiền gốc (để lưu vào DB)
     let totalPrice = 0;
     cartItems.forEach(item => {
       totalPrice += item.product.price * item.quantity;
@@ -298,6 +306,18 @@ exports.checkout = async (req, res, next) => {
 
     // Tính phí vận chuyển
     const shippingFee = totalPrice >= 500000 ? 0 : 30000;
+
+    // Sử dụng amount từ frontend (đã trừ discount) làm tổng thanh toán
+    const finalAmount = parseInt(amount) || (totalPrice + shippingFee);
+    const appliedDiscountValue = parseInt(discountValue) || 0;
+    const appliedDiscountCode = discountCode || '';
+
+    console.log('Price calculation:', {
+      totalPrice,
+      shippingFee,
+      appliedDiscountValue,
+      finalAmount
+    });
 
     // Lấy thông tin người dùng
     const user = {
@@ -340,12 +360,22 @@ exports.checkout = async (req, res, next) => {
       };
     });
 
-    // Tạo đơn hàng mới
+    // Tạo đơn hàng mới với thông tin đầy đủ
     const order = new Order(
       orderItems,
       user,
-      totalPrice,
-      shippingFee
+      totalPrice, // Tổng tiền gốc
+      shippingFee,
+      {
+        fullName: fullName,
+        phone: phone,
+        address: address,
+        note: note,
+        paymentMethod: paymentMethod,
+        discountCode: appliedDiscountCode,
+        discountValue: appliedDiscountValue,
+        finalAmount: finalAmount // Tổng tiền sau khi trừ discount
+      }
     );
 
     // Lưu đơn hàng vào database

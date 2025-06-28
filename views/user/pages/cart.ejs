@@ -140,7 +140,7 @@
               <span class="font-weight-bold text-primary h5 cart-total"><%= (totalPrice + shippingFee).toLocaleString('vi-VN') %> VNĐ</span>
             </div>
             
-            <a href="/user/checkout" class="btn btn-success btn-block btn-lg checkout-btn">
+            <a href="/user/checkout" class="btn btn-success btn-block btn-lg checkout-btn" id="checkoutBtn">
               <i class="fas fa-lock mr-2"></i>Tiến hành thanh toán
             </a>
           </div>
@@ -185,7 +185,17 @@ document.addEventListener('DOMContentLoaded', function() {
   const discountCodeInput = document.getElementById('discountCode');
   const discountAppliedRow = document.getElementById('discountAppliedRow');
   const discountAppliedAmount = document.getElementById('discountAppliedAmount');
-  window.discountsList = [];
+  const cartTotalElement = document.querySelector('.cart-total');
+  const subtotalElement = document.querySelector('.cart-subtotal');
+  let discountValue = 0;
+  let totalAmount = 0;
+  if (subtotalElement) {
+    totalAmount = parseInt(subtotalElement.textContent.replace(/\D/g, ''));
+    const shippingFeeElement = document.querySelector('.shipping-fee');
+    if (shippingFeeElement) {
+      totalAmount += parseInt(shippingFeeElement.textContent.replace(/\D/g, ''));
+    }
+  }
 
   // Lấy danh sách mã giảm giá ngay khi load trang (đảm bảo luôn có dữ liệu)
   fetch('/user/cart/available-discounts')
@@ -229,19 +239,34 @@ document.addEventListener('DOMContentLoaded', function() {
   if (discountCodeInput) {
     discountCodeInput.addEventListener('input', function() {
       const code = this.value.trim();
-      const discount = (window.discountsList || []).find(d => d.code === code);
-      const subtotalElement = document.querySelector('.cart-subtotal');
-      let totalPrice = 0;
-      if (subtotalElement) {
-        totalPrice = parseInt(subtotalElement.textContent.replace(/\D/g, ''));
-      }
-      if (discount && totalPrice >= discount.min_order_value) {
-        discountAppliedRow.style.display = '';
-        discountAppliedAmount.textContent = `-${discount.value.toLocaleString('vi-VN')} VNĐ`;
+      const discounts = window.discountsList || [];
+      const discount = discounts.find(d => d.code === code);
+      if (discount && totalAmount >= discount.min_order_value) {
+        discountValue = discount.value;
+        if (discountAppliedAmount) discountAppliedAmount.textContent = `-${discountValue.toLocaleString('vi-VN')} VNĐ`;
+        const finalAmount = Math.max(0, totalAmount - discountValue);
+        if (cartTotalElement) cartTotalElement.textContent = finalAmount.toLocaleString('vi-VN') + ' VNĐ';
       } else {
-        discountAppliedRow.style.display = 'none';
-        discountAppliedAmount.textContent = '0 VNĐ';
+        discountValue = 0;
+        if (discountAppliedAmount) discountAppliedAmount.textContent = '0 VNĐ';
+        if (cartTotalElement) cartTotalElement.textContent = totalAmount.toLocaleString('vi-VN') + ' VNĐ';
       }
+    });
+  }
+
+  // Xử lý nút checkout để thêm discount code vào URL
+  const checkoutBtn = document.getElementById('checkoutBtn');
+  if (checkoutBtn) {
+    checkoutBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      const discountCode = discountCodeInput ? discountCodeInput.value.trim() : '';
+      let checkoutUrl = '/user/checkout';
+      
+      if (discountCode) {
+        checkoutUrl += `?discountCode=${encodeURIComponent(discountCode)}`;
+      }
+      
+      window.location.href = checkoutUrl;
     });
   }
 });

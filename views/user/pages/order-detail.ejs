@@ -68,6 +68,17 @@
               }) %></p>
               <p><strong>Mã đơn hàng:</strong> #<%= order._id.toString() %></p>
               <p><strong>Email khách hàng:</strong> <%= order.user.email %></p>
+              
+              <% if (order.shippingInfo) { %>
+                <hr>
+                <h6 class="fw-bold">Thông tin giao hàng:</h6>
+                <p><strong>Họ và tên:</strong> <%= order.shippingInfo.fullName %></p>
+                <p><strong>Số điện thoại:</strong> <%= order.shippingInfo.phone %></p>
+                <p><strong>Địa chỉ:</strong> <%= order.shippingInfo.address %></p>
+                <% if (order.shippingInfo.note) { %>
+                  <p><strong>Ghi chú:</strong> <%= order.shippingInfo.note %></p>
+                <% } %>
+              <% } %>
             </div>
             <div class="col-md-6">
               <% if (order.status === 'Chờ xác nhận') { %>
@@ -145,12 +156,33 @@
             <span><%= order.shippingFee.toLocaleString('vi-VN') %> VNĐ</span>
           </div>
           
+          <% if (order.paymentInfo && order.paymentInfo.discountCode && order.paymentInfo.discountValue > 0) { %>
+            <div class="d-flex justify-content-between mb-2">
+              <span>Mã giảm giá <%= order.paymentInfo.discountCode %>:</span>
+              <span class="text-success fw-bold">-<%= order.paymentInfo.discountValue.toLocaleString('vi-VN') %> VNĐ</span>
+            </div>
+          <% } %>
+          
           <hr>
           
           <div class="d-flex justify-content-between">
             <span class="fw-bold">Tổng thanh toán:</span>
-            <span class="fw-bold text-primary h5"><%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ</span>
+            <% if (order.paymentInfo && order.paymentInfo.finalAmount) { %>
+              <span class="fw-bold text-primary h5"><%= order.paymentInfo.finalAmount.toLocaleString('vi-VN') %> VNĐ</span>
+            <% } else { %>
+              <span class="fw-bold text-primary h5"><%= (order.totalPrice + order.shippingFee).toLocaleString('vi-VN') %> VNĐ</span>
+            <% } %>
           </div>
+          
+          <% if (order.paymentInfo && order.paymentInfo.method) { %>
+            <div class="mt-3 p-2 bg-light rounded">
+              <small class="text-muted">
+                <i class="fas fa-credit-card me-1"></i>
+                Phương thức thanh toán: 
+                <strong><%= order.paymentInfo.method === 'VNPay' ? 'VNPay' : 'Thanh toán khi nhận hàng (COD)' %></strong>
+              </small>
+            </div>
+          <% } %>
         </div>
       </div>
       

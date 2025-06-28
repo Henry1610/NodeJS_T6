@@ -1,10 +1,21 @@
 // Checkout JavaScript
+let discountValue = 0;
+let appliedDiscountCode = '';
+let finalAmount = 0;
+
 document.addEventListener('DOMContentLoaded', function() {
   console.log('Checkout script loaded');
   
   const placeOrderBtn = document.getElementById('placeOrderBtn');
   const checkoutForm = document.getElementById('checkoutForm');
-  
+  const discountCodeInput = document.getElementById('discountCode');
+  const discountAppliedAmount = document.getElementById('discountAppliedAmount');
+  const discountAppliedRow = document.getElementById('discountAppliedRow');
+  const cartTotalElement = document.querySelector('[data-total-amount]');
+  const showDiscountsBtn = document.getElementById('showDiscountsBtn');
+  const discountsModal = document.getElementById('discountsModal');
+  const discountsListDiv = document.getElementById('discountsList');
+
   if (!placeOrderBtn || !checkoutForm) {
     console.error('Required elements not found');
     return;
@@ -13,8 +24,121 @@ document.addEventListener('DOMContentLoaded', function() {
   // Lấy totalAmount từ global variable hoặc data attribute
   const totalAmountElement = document.querySelector('[data-total-amount]');
   const totalAmount = totalAmountElement ? parseInt(totalAmountElement.dataset.totalAmount) : 0;
+  finalAmount = totalAmount;
   
   console.log('Total amount:', totalAmount);
+
+  // Lấy danh sách mã giảm giá
+  fetch('/user/cart/available-discounts')
+    .then(res => res.json())
+    .then(data => { 
+      window.discountsList = data.discounts || []; 
+      console.log('Available discounts:', window.discountsList);
+      
+      // Sau khi load xong danh sách, kiểm tra discount code từ URL
+      const urlParams = new URLSearchParams(window.location.search);
+      const discountCodeFromUrl = urlParams.get('discountCode');
+      if (discountCodeFromUrl && discountCodeInput) {
+        discountCodeInput.value = discountCodeFromUrl;
+        console.log('Auto-filled discount code from URL:', discountCodeFromUrl);
+        // Trigger input event để tính toán lại
+        discountCodeInput.dispatchEvent(new Event('input'));
+      }
+    });
+
+  // Auto-fill discount code từ URL parameter (fallback nếu fetch chậm)
+  const urlParams = new URLSearchParams(window.location.search);
+  const discountCodeFromUrl = urlParams.get('discountCode');
+  if (discountCodeFromUrl && discountCodeInput) {
+    discountCodeInput.value = discountCodeFromUrl;
+    console.log('Auto-filled discount code from URL (fallback):', discountCodeFromUrl);
+  }
+
+  // Xử lý modal danh sách mã giảm giá
+  if (showDiscountsBtn && discountsModal && discountsListDiv) {
+    const discountsModalInstance = new bootstrap.Modal(discountsModal);
+    
+    showDiscountsBtn.addEventListener('click', function() {
+      const discounts = window.discountsList || [];
+      discountsListDiv.innerHTML = discounts.length > 0 ? discounts.map(d => `
+        <div class='card mb-2'>
+          <div class='card-body'>
+            <div class='d-flex justify-content-between align-items-center'>
+              <div>
+                <span class='badge bg-success'>${d.code}</span>
+                <span class='ms-2'>${d.description || ''}</span>
+                <div class='small text-muted'>
+                  Giảm: ${d.value.toLocaleString('vi-VN')} VNĐ, 
+                  Đơn tối thiểu: ${d.min_order_value.toLocaleString('vi-VN')} VNĐ
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm apply-discount-btn" data-code="${d.code}">Áp dụng</button>
+            </div>
+          </div>
+        </div>
+      `).join('') : '<div class="alert alert-info">Không có mã giảm giá nào khả dụng.</div>';
+      
+      setTimeout(() => {
+        document.querySelectorAll('.apply-discount-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            if (discountCodeInput) discountCodeInput.value = this.dataset.code;
+            discountsModalInstance.hide();
+            if (discountCodeInput) discountCodeInput.dispatchEvent(new Event('input'));
+          });
+        });
+      }, 0);
+      discountsModalInstance.show();
+    });
+  }
+
+  // Xử lý nhập mã giảm giá
+  if (discountCodeInput) {
+    discountCodeInput.addEventListener('input', function() {
+      const code = this.value.trim();
+      const discounts = window.discountsList || [];
+      const discount = discounts.find(d => d.code === code);
+      
+      if (discount && totalAmount >= discount.min_order_value) {
+        discountValue = discount.value;
+        appliedDiscountCode = code;
+        finalAmount = Math.max(0, totalAmount - discountValue);
+        
+        // Hiển thị số tiền đã giảm
+        if (discountAppliedAmount) {
+          discountAppliedAmount.textContent = `-${discountValue.toLocaleString('vi-VN')} VNĐ`;
+        }
+        if (discountAppliedRow) {
+          discountAppliedRow.style.display = 'flex';
+        }
+        
+        // Cập nhật tổng tiền
+        if (cartTotalElement) {
+          cartTotalElement.textContent = finalAmount.toLocaleString('vi-VN') + ' VNĐ';
+        }
+        
+        console.log('Discount applied:', { code, discountValue, finalAmount });
+      } else {
+        discountValue = 0;
+        appliedDiscountCode = '';
+        finalAmount = totalAmount;
+        
+        // Ẩn số tiền đã giảm
+        if (discountAppliedAmount) {
+          discountAppliedAmount.textContent = '0 VNĐ';
+        }
+        if (discountAppliedRow) {
+          discountAppliedRow.style.display = 'none';
+        }
+        
+        // Cập nhật tổng tiền
+        if (cartTotalElement) {
+          cartTotalElement.textContent = totalAmount.toLocaleString('vi-VN') + ' VNĐ';
+        }
+        
+        console.log('No discount applied, final amount:', finalAmount);
+      }
+    });
+  }
 
   placeOrderBtn.addEventListener('click', async function() {
     console.log('Place order button clicked');
@@ -53,7 +177,10 @@ document.addEventListener('DOMContentLoaded', function() {
           phone: phone,
           address: address,
           note: formData.get('note'),
-          paymentMethod: 'VNPay'
+          paymentMethod: 'VNPay',
+          discountCode: appliedDiscountCode,
+          discountValue: discountValue,
+          amount: finalAmount // Gửi số tiền đã trừ giảm giá
         };
 
         console.log('Order data:', orderData);
@@ -90,7 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Sử dụng orderId từ đơn hàng đã tạo để tạo URL VNPay
         const vnpayData = {
-          amount: totalAmount,
+          amount: finalAmount, // Số tiền đã trừ giảm giá
           orderId: orderResult.orderId.toString(),
           orderInfo: 'Thanh toan don hang ' + orderResult.orderId.toString()
         };
@@ -127,7 +254,10 @@ document.addEventListener('DOMContentLoaded', function() {
           phone: phone,
           address: address,
           note: formData.get('note'),
-          paymentMethod: 'COD'
+          paymentMethod: 'COD',
+          discountCode: appliedDiscountCode,
+          discountValue: discountValue,
+          amount: finalAmount // Gửi số tiền đã trừ giảm giá
         };
 
         const response = await fetch('/user/checkout', {

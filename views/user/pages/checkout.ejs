@@ -144,11 +144,26 @@
             </div>
           <% } %>
           
+          <!-- Mã giảm giá -->
+          <div class="mb-3">
+            <div class="input-group">
+              <input type="text" class="form-control" id="discountCode" name="discountCode" placeholder="Nhập mã giảm giá">
+              <button type="button" class="btn btn-outline-info" id="showDiscountsBtn">Xem mã</button>
+            </div>
+            <div id="discountMessage" class="small mt-2"></div>
+          </div>
+          
+          <!-- Hiển thị số tiền đã giảm (nếu có) -->
+          <div id="discountAppliedRow" class="d-flex justify-content-between mb-2" style="display:none;">
+            <span>Đã giảm:</span>
+            <span class="text-success fw-bold" id="discountAppliedAmount">0 VNĐ</span>
+          </div>
+          
           <hr>
           
           <div class="d-flex justify-content-between mb-4">
             <span class="fw-bold">Tổng thanh toán:</span>
-            <span class="fw-bold text-primary h5" data-total-amount="<%= finalTotal %>"><%= finalTotal.toLocaleString('vi-VN') %> VNĐ</span>
+            <span class="fw-bold text-primary h5" id="checkoutTotal" data-total-amount="<%= finalTotal %>"><%= finalTotal.toLocaleString('vi-VN') %> VNĐ</span>
           </div>
           
           <button class="btn btn-success btn-block btn-lg" id="placeOrderBtn">
@@ -161,6 +176,24 @@
             </a>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal hiển thị danh sách mã giảm giá -->
+<div class="modal fade" id="discountsModal" tabindex="-1" aria-labelledby="discountsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="discountsModalLabel">Mã giảm giá khả dụng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="discountsList">
+        <!-- Danh sách mã sẽ render ở đây -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
       </div>
     </div>
   </div>

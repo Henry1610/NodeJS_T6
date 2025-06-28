@@ -3,14 +3,32 @@ const ObjectId = mongodb.ObjectId;
 const getDb = require('../util/database').getDb;
 
 class Order {
-    constructor(items, user, totalPrice, shippingFee, status = 'Chờ xác nhận', id = null) {
+    constructor(items, user, totalPrice, shippingFee, shippingInfo = null, status = 'Chờ xác nhận', id = null) {
         this.items = items; // Mảng các sản phẩm trong đơn hàng
         this.user = user; // Thông tin người dùng
-        this.totalPrice = totalPrice; // Tổng giá trị đơn hàng
+        this.totalPrice = totalPrice; // Tổng giá trị đơn hàng gốc
         this.shippingFee = shippingFee; // Phí vận chuyển
         this.status = status; // Trạng thái đơn hàng
         this.orderDate = new Date(); // Ngày đặt hàng
         this._id = id ? new ObjectId(id) : null;
+        
+        // Thông tin giao hàng
+        if (shippingInfo) {
+            this.shippingInfo = {
+                fullName: shippingInfo.fullName,
+                phone: shippingInfo.phone,
+                address: shippingInfo.address,
+                note: shippingInfo.note || ''
+            };
+            
+            // Thông tin thanh toán
+            this.paymentInfo = {
+                method: shippingInfo.paymentMethod || 'COD',
+                discountCode: shippingInfo.discountCode || '',
+                discountValue: shippingInfo.discountValue || 0,
+                finalAmount: shippingInfo.finalAmount || (totalPrice + shippingFee)
+            };
+        }
     }
 
     // Lưu đơn hàng vào database
