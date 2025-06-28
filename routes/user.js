@@ -58,4 +58,7 @@ router.get('/cart/available-discounts', authMiddleware.isAuth, async (req, res) 
   }
 });
 
+// Đánh giá sản phẩm theo đơn hàng
+router.post('/order/:orderId/review/:productId', userController.postReview);
+
 module.exports = router; 

@@ -75,20 +75,35 @@ app.post('/api/create-qr', async (req, res) => {
   }
 });
 
-app.get('/api/check-payment-vnpay', (req, res) => {
+app.get('/api/check-payment-vnpay', async (req, res) => {
   console.log('VNPay callback data:', req.query);
   
   // Kiểm tra response code
   const vnp_ResponseCode = req.query.vnp_ResponseCode;
   const vnp_Amount = req.query.vnp_Amount;
   const vnp_TxnRef = req.query.vnp_TxnRef;
+  const vnp_TransactionNo = req.query.vnp_TransactionNo; // <-- Lấy mã giao dịch VNPay
   
   console.log('vnp_TxnRef:', vnp_TxnRef); // Thêm logging
-  
+  console.log('vnp_TransactionNo:', vnp_TransactionNo); // Thêm logging
+
   if (vnp_ResponseCode === '00') {
     // Thanh toán thành công
     const amount = parseInt(vnp_Amount) / 100; // Chia cho 100 để lấy số tiền thực
-    
+
+    // Lưu mã giao dịch VNPay vào đơn hàng
+    if (vnp_TxnRef && vnp_TransactionNo) {
+      const Order = require('./models/Order');
+      try {
+        await Order.updateOrderWithVNPayTransactionNo(vnp_TxnRef, vnp_TransactionNo);
+        console.log(`Đã lưu mã giao dịch VNPay: ${vnp_TransactionNo} cho đơn hàng: ${vnp_TxnRef}`);
+      } catch (error) {
+        console.error('Lỗi khi lưu mã giao dịch VNPay:', error);
+      }
+    } else {
+      console.warn('Thiếu thông tin vnp_TxnRef hoặc vnp_TransactionNo trong callback VNPay');
+    }
+
     if (vnp_TxnRef) {
       return res.redirect(`/user/checkout/success/${vnp_TxnRef}?payment=vnpay&amount=${amount}`);
     } else {
@@ -97,6 +112,7 @@ app.get('/api/check-payment-vnpay', (req, res) => {
     }
   } else {
     // Thanh toán thất bại
+    console.log(`Thanh toán VNPay thất bại. Response code: ${vnp_ResponseCode}`);
     if (vnp_TxnRef) {
       return res.redirect(`/user/checkout?error=payment_failed&orderId=${vnp_TxnRef}`);
     } else {
@@ -112,6 +128,7 @@ app.get('/api/check-refund-vnpay', async (req, res) => {
   const vnp_ResponseCode = req.query.vnp_ResponseCode;
   const vnp_TxnRef = req.query.vnp_TxnRef;
   const vnp_Amount = req.query.vnp_Amount;
+  const vnp_Message = req.query.vnp_Message;
   
   try {
     const Order = require('./models/Order');
@@ -123,7 +140,8 @@ app.get('/api/check-refund-vnpay', async (req, res) => {
       // Cập nhật trạng thái hoàn tiền trong database
       await Order.updateRefundStatus(vnp_TxnRef, 'completed', {
         completedAt: new Date(),
-        responseCode: vnp_ResponseCode
+        responseCode: vnp_ResponseCode,
+        responseMessage: vnp_Message || 'Hoàn tiền thành công'
       });
       
       console.log(`VNPay refund successful for ${vnp_TxnRef}, amount: ${refundAmount}`);
@@ -133,15 +151,15 @@ app.get('/api/check-refund-vnpay', async (req, res) => {
       await Order.updateRefundStatus(vnp_TxnRef, 'failed', {
         failedAt: new Date(),
         responseCode: vnp_ResponseCode,
-        errorMessage: req.query.vnp_Message || 'Hoàn tiền thất bại'
+        errorMessage: vnp_Message || 'Hoàn tiền thất bại'
       });
       
-      console.log(`VNPay refund failed for ${vnp_TxnRef}, response code: ${vnp_ResponseCode}`);
-      return res.redirect('/admin/cancel-requests?error=Hoàn tiền VNPay thất bại');
+      console.log(`VNPay refund failed for ${vnp_TxnRef}, response code: ${vnp_ResponseCode}, message: ${vnp_Message}`);
+      return res.redirect('/admin/cancel-requests?error=Hoàn tiền VNPay thất bại: ' + (vnp_Message || 'Lỗi không xác định'));
     }
   } catch (error) {
     console.error('Lỗi xử lý callback hoàn tiền VNPay:', error);
-    return res.redirect('/admin/cancel-requests?error=Lỗi xử lý hoàn tiền');
+    return res.redirect('/admin/cancel-requests?error=Lỗi xử lý hoàn tiền: ' + error.message);
   }
 });
 
@@ -183,51 +201,113 @@ app.post('/api/test-refund', async (req, res) => {
       });
     }
 
-    const {VNPay, ProductCode, dateFormat} = require('vnpay');
-    
-    const vnpay = new VNPay({
-      tmnCode: 'PX2DIOF7',
-      secureSecret: '19A2ZLVXKMDZ0YIJ2DDPYAY8LPB7I8FF',
-      vnpayHost: 'https://sandbox.vnpayment.vn/',
-      testMode: true,
-      hashAlgorithm: 'SHA512',
-      logger: fn => fn,
-    });
+    // Kiểm tra xem có mã giao dịch VNPay không
+    if (!order.paymentInfo.vnp_TransactionNo) {
+      return res.status(400).json({
+        success: false,
+        message: 'Không tìm thấy mã giao dịch VNPay của đơn hàng này'
+      });
+    }
 
     const refundTxnRef = `TEST_REFUND_${order._id}_${Date.now()}`;
-    const refundAmount = Math.round(order.paymentInfo.finalAmount * 100);
     
-    const refundUrl = await vnpay.buildRefundUrl({
-      vnp_Amount: refundAmount,
-      vnp_OrderInfo: `Test hoan tien don hang ${order._id}`,
-      vnp_OrderType: ProductCode.Other,
-      vnp_TxnRef: refundTxnRef,
-      vnp_TransactionType: '02',
-      vnp_TransactionNo: order._id.toString(),
-      vnp_CreateDate: dateFormat(new Date()),
-      vnp_IpAddr: '127.0.0.1',
-      vnp_ReturnUrl: 'http://localhost:3000/api/check-refund-vnpay'
+    console.log('Test refund details:', {
+      orderId: order._id,
+      originalTransactionNo: order.paymentInfo.vnp_TransactionNo,
+      refundAmount: order.paymentInfo.finalAmount,
+      refundTxnRef: refundTxnRef
     });
-
+    
     await Order.saveRefundInfo(order._id, {
       refundTxnRef: refundTxnRef,
       refundAmount: order.paymentInfo.finalAmount,
-      refundUrl: refundUrl,
       refundStatus: 'pending',
-      refundDate: new Date()
+      refundDate: new Date(),
+      originalTransactionId: order.paymentInfo.vnp_TransactionNo, // Lưu mã giao dịch gốc
+      adminInstructions: {
+        vnp_TransactionNo: order.paymentInfo.vnp_TransactionNo,
+        refundAmount: order.paymentInfo.finalAmount,
+        refundReason: `Test hoàn tiền đơn hàng ${order._id}`,
+        merchantId: 'PX2DIOF7',
+        instructions: [
+          '1. Đăng nhập vào VNPay Merchant Dashboard',
+          '2. Vào mục "Giao dịch" hoặc "Quản lý giao dịch"',
+          '3. Tìm giao dịch có mã: ' + order.paymentInfo.vnp_TransactionNo,
+          '4. Chọn "Hoàn tiền" hoặc "Refund"',
+          '5. Nhập số tiền hoàn: ' + order.paymentInfo.finalAmount.toLocaleString('vi-VN') + ' VND',
+          '6. Nhập lý do: Test hoàn tiền đơn hàng ' + order._id,
+          '7. Xác nhận hoàn tiền'
+        ]
+      }
     });
 
     return res.status(200).json({
       success: true,
-      message: 'Tạo URL hoàn tiền thành công',
-      refundUrl: refundUrl,
-      refundTxnRef: refundTxnRef
+      message: 'Đã lưu thông tin hoàn tiền. Admin cần thực hiện hoàn tiền thủ công trên VNPay Dashboard.',
+      refundTxnRef: refundTxnRef,
+      originalTransactionNo: order.paymentInfo.vnp_TransactionNo,
+      refundAmount: order.paymentInfo.finalAmount,
+      adminInstructions: {
+        vnp_TransactionNo: order.paymentInfo.vnp_TransactionNo,
+        refundAmount: order.paymentInfo.finalAmount,
+        refundReason: `Test hoàn tiền đơn hàng ${order._id}`,
+        merchantId: 'PX2DIOF7'
+      }
     });
   } catch (error) {
     console.error('Lỗi test hoàn tiền:', error);
     return res.status(500).json({
       success: false,
-      message: 'Lỗi tạo URL hoàn tiền: ' + error.message
+      message: 'Lỗi tạo thông tin hoàn tiền: ' + error.message
+    });
+  }
+});
+
+// Route debug để kiểm tra thông tin đơn hàng và mã giao dịch VNPay
+app.get('/api/debug-order/:orderId', async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    if (!orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu mã đơn hàng'
+      });
+    }
+
+    const Order = require('./models/Order');
+    const order = await Order.getOrderById(orderId);
+    
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Không tìm thấy đơn hàng'
+      });
+    }
+
+    const debugInfo = {
+      orderId: order._id,
+      status: order.status,
+      paymentMethod: order.paymentInfo?.method,
+      finalAmount: order.paymentInfo?.finalAmount,
+      vnp_TransactionNo: order.paymentInfo?.vnp_TransactionNo,
+      hasRefundInfo: !!order.refundInfo,
+      refundStatus: order.refundInfo?.refundStatus,
+      refundTxnRef: order.refundInfo?.refundTxnRef,
+      originalTransactionId: order.refundInfo?.originalTransactionId
+    };
+
+    return res.status(200).json({
+      success: true,
+      message: 'Thông tin debug đơn hàng',
+      debugInfo: debugInfo,
+      fullOrder: order
+    });
+  } catch (error) {
+    console.error('Lỗi debug đơn hàng:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi debug đơn hàng: ' + error.message
     });
   }
 });

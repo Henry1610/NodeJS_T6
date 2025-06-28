@@ -130,6 +130,25 @@
                             <% } %>
                         </div>
                         <% } %>
+
+                        <% if (order.paymentInfo && order.paymentInfo.method === 'VNPay') { %>
+                        <div class="col-12 mt-3">
+                            <hr>
+                            <h6 class="fw-bold">Thông tin thanh toán VNPay:</h6>
+                            <p><strong>Phương thức:</strong> VNPay</p>
+                            <p><strong>Số tiền thanh toán:</strong> <%= order.paymentInfo.finalAmount.toLocaleString('vi-VN') %> VNĐ</p>
+                            
+                            <% if (!order.refundInfo) { %>
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    <strong>Test hoàn tiền:</strong> Bạn có thể tạo URL hoàn tiền test cho đơn hàng này.
+                                </div>
+                                <button type="button" class="btn btn-warning btn-sm" onclick="createTestRefund('<%= order._id %>')">
+                                    <i class="fas fa-flask me-1"></i>Tạo test hoàn tiền
+                                </button>
+                            <% } %>
+                        </div>
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -382,4 +401,33 @@
             window.print();
         });
     });
+
+    // Hàm tạo test refund
+    async function createTestRefund(orderId) {
+        if (confirm('Bạn có chắc chắn muốn tạo URL hoàn tiền test cho đơn hàng này?')) {
+            try {
+                const response = await fetch('/api/test-refund', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        orderId: orderId
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    alert('Đã tạo URL hoàn tiền test thành công! Mã hoàn tiền: ' + result.refundTxnRef);
+                    location.reload();
+                } else {
+                    alert('Lỗi: ' + result.message);
+                }
+            } catch (error) {
+                alert('Đã xảy ra lỗi khi tạo test refund.');
+                console.error(error);
+            }
+        }
+    }
 </script> 

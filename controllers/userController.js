@@ -5,6 +5,7 @@ const Cart = require('../models/Cart');
 const Order = require('../models/Order');
 const mongodb = require('mongodb');
 const User = require('../models/User');
+const Review = require('../models/Review');
 
 // Trang chủ cho người dùng
 exports.getHomePage = async (req, res, next) => {
@@ -77,12 +78,16 @@ exports.getProductDetail = async (req, res, next) => {
     // Thêm thông tin danh mục và thương hiệu vào sản phẩm
     product.categoryName = category ? category.name : 'Unknown Category';
     product.brandName = brand ? brand.name : 'Unknown Brand';
+
+    // Lấy đánh giá sản phẩm
+    const reviews = await Review.findByProduct(prodId);
     
     res.render('user/pages/product-detail', {
       title: product.title,
       path: '/user/products',
       product: product,
-      relatedProducts: relatedProducts.filter(p => p._id.toString() !== prodId)
+      relatedProducts: relatedProducts.filter(p => p._id.toString() !== prodId),
+      reviews: reviews
     });
   } catch (error) {
     console.error(error);
@@ -689,4 +694,40 @@ exports.updateCartQuantity = async (req, res, next) => {
     console.error('Lỗi khi cập nhật số lượng sản phẩm:', error);
     res.status(500).json({ message: 'Internal server error' });
   }
+};
+
+// API: Gửi đánh giá sản phẩm theo đơn hàng
+exports.postReview = async (req, res, next) => {
+    try {
+        const orderId = req.params.orderId;
+        const productId = req.params.productId;
+        const userId = req.session.user._id;
+        const { rating, comment } = req.body;
+
+        // Kiểm tra trạng thái đơn hàng
+        const order = await Order.getOrderById(orderId);
+        if (!order || order.status !== 'Đã giao hàng' || order.user._id.toString() !== userId.toString()) {
+            return res.status(400).json({ success: false, message: 'Không thể đánh giá sản phẩm này.' });
+        }
+
+        // Kiểm tra sản phẩm có trong đơn hàng không
+        const item = order.items.find(i => i.productId.toString() === productId);
+        if (!item) {
+            return res.status(400).json({ success: false, message: 'Sản phẩm không thuộc đơn hàng.' });
+        }
+
+        // Kiểm tra đã đánh giá chưa
+        const existed = await Review.findByOrderAndProduct(orderId, productId, userId);
+        if (existed) {
+            return res.status(400).json({ success: false, message: 'Bạn đã đánh giá sản phẩm này.' });
+        }
+
+        // Lưu đánh giá
+        const review = new Review(orderId, userId, productId, rating, comment);
+        await review.save();
+        return res.status(200).json({ success: true, message: 'Đánh giá thành công!' });
+    } catch (error) {
+        console.error('Lỗi khi gửi đánh giá:', error);
+        return res.status(500).json({ success: false, message: 'Lỗi server khi gửi đánh giá.' });
+    }
 }; 

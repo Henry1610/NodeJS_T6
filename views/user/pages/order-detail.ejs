@@ -164,6 +164,60 @@
         </div>
       </div>
       
+      <% if (order.status === 'Đã giao hàng') { %>
+        <div class="card shadow-sm border-0 mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">Đánh giá sản phẩm</h5>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table mb-0">
+                <thead class="table-light">
+                  <tr>
+                    <th>Sản phẩm</th>
+                    <th>Đánh giá của bạn</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% order.items.forEach(item => { %>
+                    <tr>
+                      <td>
+                        <div class="d-flex align-items-center">
+                          <img src="<%= item.imgUrl || '/images/default-product.jpg' %>" alt="<%= item.title %>" class="img-thumbnail me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                          <div>
+                            <p class="fw-bold mb-0"><%= item.title %></p>
+                            <small class="text-muted"><%= item.categoryName %> | <%= item.brandName %></small>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <form class="review-form" data-product-id="<%= item.productId %>" data-order-id="<%= order._id %>">
+                          <div class="mb-2">
+                            <select class="form-select rating-select" name="rating" required>
+                              <option value="">Chọn sao</option>
+                              <option value="1">1 ⭐</option>
+                              <option value="2">2 ⭐⭐</option>
+                              <option value="3">3 ⭐⭐⭐</option>
+                              <option value="4">4 ⭐⭐⭐⭐</option>
+                              <option value="5">5 ⭐⭐⭐⭐⭐</option>
+                            </select>
+                          </div>
+                          <div class="mb-2">
+                            <textarea class="form-control" name="comment" rows="2" placeholder="Nhận xét của bạn" required></textarea>
+                          </div>
+                          <button type="submit" class="btn btn-primary btn-sm">Gửi đánh giá</button>
+                          <div class="review-status mt-2"></div>
+                        </form>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      <% } %>
+
       <a href="/user/orders" class="btn btn-outline-primary">
         <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách đơn hàng
       </a>
@@ -349,4 +403,36 @@
       }
     });
   }, 5000);
+</script>
+
+<script>
+document.querySelectorAll('.review-form').forEach(form => {
+  form.addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const productId = this.getAttribute('data-product-id');
+    const orderId = this.getAttribute('data-order-id');
+    const rating = this.querySelector('select[name="rating"]').value;
+    const comment = this.querySelector('textarea[name="comment"]').value;
+    const statusDiv = this.querySelector('.review-status');
+    statusDiv.innerHTML = '<span class="text-info">Đang gửi đánh giá...</span>';
+    try {
+      const res = await fetch(`/user/order/${orderId}/review/${productId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ rating, comment })
+      });
+      const data = await res.json();
+      if (data.success) {
+        statusDiv.innerHTML = '<span class="text-success">Đánh giá thành công!</span>';
+        this.querySelector('button[type="submit"]').disabled = true;
+        this.querySelector('select[name="rating"]').disabled = true;
+        this.querySelector('textarea[name="comment"]').disabled = true;
+      } else {
+        statusDiv.innerHTML = `<span class="text-danger">${data.message}</span>`;
+      }
+    } catch (err) {
+      statusDiv.innerHTML = '<span class="text-danger">Lỗi gửi đánh giá!</span>';
+    }
+  });
+});
 </script> 

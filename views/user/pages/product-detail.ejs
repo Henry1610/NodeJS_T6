@@ -136,6 +136,38 @@
       </div>
     </div>
   <% } %>
+
+  <!-- Hiển thị đánh giá sản phẩm -->
+  <% if (reviews && reviews.length > 0) { %>
+    <div class="card shadow-sm border-0 mt-5">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">Đánh giá của khách hàng</h5>
+      </div>
+      <div class="card-body">
+        <% reviews.forEach(r => { %>
+          <div class="mb-3 border-bottom pb-2">
+            <div class="d-flex align-items-center mb-1">
+              <span class="me-2 fw-bold">⭐ <%= r.rating %>/5</span>
+              <span class="text-muted small ms-2"><%= new Date(r.createdAt).toLocaleDateString('vi-VN') %></span>
+            </div>
+            <div><%= r.comment %></div>
+          </div>
+        <% }) %>
+        <% if (reviews.length === 0) { %>
+          <div class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</div>
+        <% } %>
+      </div>
+    </div>
+  <% } else { %>
+    <div class="card shadow-sm border-0 mt-5">
+      <div class="card-header bg-light">
+        <h5 class="mb-0">Đánh giá của khách hàng</h5>
+      </div>
+      <div class="card-body">
+        <div class="text-muted">Chưa có đánh giá nào cho sản phẩm này.</div>
+      </div>
+    </div>
+  <% } %>
 </div>
 
 <script>

@@ -1,0 +1,189 @@
+<%- include('../partials/admin/header') %>
+
+<div class="page-wrapper">
+    <div class="content container-fluid">
+        <div class="page-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h3 class="page-title">Thông tin Hoàn tiền VNPay</h3>
+                    <ul class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                        <li class="breadcrumb-item"><a href="/admin/orders">Đơn hàng</a></li>
+                        <li class="breadcrumb-item active">Hoàn tiền VNPay</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h4 class="card-title">Chi tiết Hoàn tiền</h4>
+                    </div>
+                    <div class="card-body">
+                        <% if (order && order.refundInfo) { %>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h5>Thông tin Đơn hàng</h5>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Mã đơn hàng:</strong></td>
+                                            <td><%= order._id %></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Trạng thái:</strong></td>
+                                            <td><span class="badge badge-warning"><%= order.status %></span></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Số tiền gốc:</strong></td>
+                                            <td><%= order.paymentInfo.finalAmount.toLocaleString('vi-VN') %> VND</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Phương thức thanh toán:</strong></td>
+                                            <td><%= order.paymentInfo.method %></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                                <div class="col-md-6">
+                                    <h5>Thông tin Hoàn tiền</h5>
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>Mã giao dịch VNPay:</strong></td>
+                                            <td><code><%= order.paymentInfo.vnp_TransactionNo %></code></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Số tiền hoàn:</strong></td>
+                                            <td><strong class="text-danger"><%= order.refundInfo.refundAmount.toLocaleString('vi-VN') %> VND</strong></td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Trạng thái hoàn tiền:</strong></td>
+                                            <td>
+                                                <% if (order.refundInfo.refundStatus === 'pending') { %>
+                                                    <span class="badge badge-warning">Chờ xử lý</span>
+                                                <% } else if (order.refundInfo.refundStatus === 'completed') { %>
+                                                    <span class="badge badge-success">Hoàn thành</span>
+                                                <% } else if (order.refundInfo.refundStatus === 'failed') { %>
+                                                    <span class="badge badge-danger">Thất bại</span>
+                                                <% } %>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Ngày yêu cầu hoàn tiền:</strong></td>
+                                            <td><%= new Date(order.refundInfo.refundDate).toLocaleString('vi-VN') %></td>
+                                        </tr>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <h5><i class="fa fa-info-circle"></i> Hướng dẫn Hoàn tiền trên VNPay Dashboard</h5>
+                                        <p><strong>Lưu ý:</strong> Hoàn tiền VNPay phải được thực hiện thủ công trên VNPay Merchant Dashboard.</p>
+                                        
+                                        <div class="mt-3">
+                                            <h6>Thông tin cần thiết:</h6>
+                                            <ul class="list-unstyled">
+                                                <li><strong>Merchant ID:</strong> <code><%= order.refundInfo.adminInstructions.merchantId %></code></li>
+                                                <li><strong>Mã giao dịch gốc:</strong> <code><%= order.refundInfo.adminInstructions.vnp_TransactionNo %></code></li>
+                                                <li><strong>Số tiền hoàn:</strong> <code><%= order.refundInfo.adminInstructions.refundAmount.toLocaleString('vi-VN') %> VND</code></li>
+                                                <li><strong>Lý do hoàn tiền:</strong> <code><%= order.refundInfo.adminInstructions.refundReason %></code></li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <h6>Các bước thực hiện:</h6>
+                                            <ol>
+                                                <% order.refundInfo.adminInstructions.instructions.forEach(function(instruction) { %>
+                                                    <li><%= instruction %></li>
+                                                <% }); %>
+                                            </ol>
+                                        </div>
+
+                                        <div class="mt-3">
+                                            <h6>Liên kết hữu ích:</h6>
+                                            <ul>
+                                                <li><a href="https://sandbox.vnpayment.vn/merchantv2/" target="_blank">VNPay Sandbox Dashboard</a></li>
+                                                <li><a href="https://vnpayment.vn/merchantv2/" target="_blank">VNPay Production Dashboard</a></li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row mt-4">
+                                <div class="col-12">
+                                    <div class="card">
+                                        <div class="card-header">
+                                            <h5>Cập nhật Trạng thái Hoàn tiền</h5>
+                                        </div>
+                                        <div class="card-body">
+                                            <form id="updateRefundStatusForm">
+                                                <div class="form-group">
+                                                    <label>Trạng thái mới:</label>
+                                                    <select class="form-control" id="newRefundStatus" name="newRefundStatus">
+                                                        <option value="pending" <%= order.refundInfo.refundStatus === 'pending' ? 'selected' : '' %>>Chờ xử lý</option>
+                                                        <option value="completed" <%= order.refundInfo.refundStatus === 'completed' ? 'selected' : '' %>>Hoàn thành</option>
+                                                        <option value="failed" <%= order.refundInfo.refundStatus === 'failed' ? 'selected' : '' %>>Thất bại</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Ghi chú:</label>
+                                                    <textarea class="form-control" id="refundNote" name="refundNote" rows="3" placeholder="Ghi chú về quá trình hoàn tiền..."></textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-primary">Cập nhật Trạng thái</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        <% } else { %>
+                            <div class="alert alert-warning">
+                                <h5><i class="fa fa-exclamation-triangle"></i> Không có thông tin hoàn tiền</h5>
+                                <p>Đơn hàng này chưa có thông tin hoàn tiền hoặc không thanh toán qua VNPay.</p>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('updateRefundStatusForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        newRefundStatus: formData.get('newRefundStatus'),
+        refundNote: formData.get('refundNote')
+    };
+    
+    try {
+        const response = await fetch(`/admin/update-refund-status/<%= order._id %>`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            alert('Cập nhật trạng thái hoàn tiền thành công!');
+            location.reload();
+        } else {
+            alert('Lỗi: ' + result.message);
+        }
+    } catch (error) {
+        console.error('Lỗi:', error);
+        alert('Đã xảy ra lỗi khi cập nhật trạng thái');
+    }
+});
+</script>
+
+<%- include('../partials/admin/sidebar') %> 

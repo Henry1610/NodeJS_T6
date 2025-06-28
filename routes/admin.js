@@ -60,6 +60,12 @@ router.get('/order/:orderId', orderController.getOrderDetail);
 router.post('/order/:orderId/update-status', orderController.updateOrderStatus);
 
 // ==========================
+// REFUND ROUTES
+// ==========================
+router.get('/refund/:orderId', orderController.getRefundInfo);
+router.post('/update-refund-status/:orderId', orderController.updateRefundStatus);
+
+// ==========================
 // CANCEL REQUEST ROUTES
 // ==========================
 router.get('/cancel-requests', orderController.getCancelRequests);

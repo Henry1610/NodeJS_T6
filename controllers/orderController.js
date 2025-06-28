@@ -290,18 +290,23 @@ exports.processCancelRequest = async (req, res, next) => {
         // Nếu chấp nhận và đơn hàng thanh toán qua VNPay, thực hiện hoàn tiền
         if (action === 'approve' && order.paymentInfo && order.paymentInfo.method === 'VNPay') {
             try {
+                console.log('Bắt đầu xử lý hoàn tiền VNPay cho đơn hàng:', order._id);
                 const refundResult = await processVNPayRefund(order);
+                
                 if (!refundResult.success) {
+                    console.error('Lỗi hoàn tiền VNPay:', refundResult.message);
                     return res.status(500).json({ 
                         success: false, 
                         message: `Lỗi hoàn tiền VNPay: ${refundResult.message}` 
                     });
                 }
+                
+                console.log('Hoàn tiền VNPay thành công:', refundResult);
             } catch (refundError) {
                 console.error('Lỗi hoàn tiền VNPay:', refundError);
                 return res.status(500).json({ 
                     success: false, 
-                    message: 'Đã xảy ra lỗi khi hoàn tiền qua VNPay' 
+                    message: 'Đã xảy ra lỗi khi hoàn tiền qua VNPay: ' + refundError.message 
                 });
             }
         }
@@ -316,7 +321,7 @@ exports.processCancelRequest = async (req, res, next) => {
         console.error('Lỗi khi xử lý yêu cầu hủy:', error);
         return res.status(500).json({ 
             success: false, 
-            message: 'Đã xảy ra lỗi khi xử lý yêu cầu hủy' 
+            message: 'Đã xảy ra lỗi khi xử lý yêu cầu hủy: ' + error.message 
         });
     }
 };
@@ -324,55 +329,139 @@ exports.processCancelRequest = async (req, res, next) => {
 // Hàm xử lý hoàn tiền VNPay
 async function processVNPayRefund(order) {
     try {
-        const vnpay = new VNPay({
-            tmnCode: 'PX2DIOF7',
-            secureSecret: '19A2ZLVXKMDZ0YIJ2DDPYAY8LPB7I8FF',
-            vnpayHost: 'https://sandbox.vnpayment.vn/',
-            testMode: true,
-            hashAlgorithm: 'SHA512',
-            logger: fn => fn,
-        });
+        // Kiểm tra xem đơn hàng có mã giao dịch VNPay không
+        if (!order.paymentInfo || !order.paymentInfo.vnp_TransactionNo) {
+            throw new Error('Không tìm thấy mã giao dịch VNPay của đơn hàng này. Vui lòng kiểm tra lại thông tin thanh toán.');
+        }
 
         // Tạo mã giao dịch hoàn tiền
         const refundTxnRef = `REFUND_${order._id}_${Date.now()}`;
         
-        // Số tiền hoàn (nhân 100 theo yêu cầu của VNPay)
-        const refundAmount = Math.round(order.paymentInfo.finalAmount * 100);
-        
-        // Tạo URL hoàn tiền VNPay
-        const refundUrl = await vnpay.buildRefundUrl({
-            vnp_Amount: refundAmount,
-            vnp_OrderInfo: `Hoan tien don hang ${order._id}`,
-            vnp_OrderType: ProductCode.Other,
-            vnp_TxnRef: refundTxnRef,
-            vnp_TransactionType: '02', // 02 = Hoàn tiền
-            vnp_TransactionNo: order._id.toString(), // Mã giao dịch gốc
-            vnp_CreateDate: dateFormat(new Date()),
-            vnp_IpAddr: '127.0.0.1',
-            vnp_ReturnUrl: 'http://localhost:3000/api/check-refund-vnpay'
+        console.log('Refund details:', {
+            orderId: order._id,
+            originalTransactionNo: order.paymentInfo.vnp_TransactionNo,
+            refundAmount: order.paymentInfo.finalAmount,
+            refundTxnRef: refundTxnRef
         });
-
-        // Lưu thông tin hoàn tiền vào database
+        
+        // Lưu thông tin hoàn tiền vào database để admin thực hiện thủ công
         await Order.saveRefundInfo(order._id, {
             refundTxnRef: refundTxnRef,
             refundAmount: order.paymentInfo.finalAmount,
-            refundUrl: refundUrl,
             refundStatus: 'pending',
-            refundDate: new Date()
+            refundDate: new Date(),
+            originalTransactionId: order.paymentInfo.vnp_TransactionNo, // Mã giao dịch gốc
+            note: `Hoàn tiền cho đơn hàng ${order._id} - Thanh toán qua VNPay`,
+            adminInstructions: {
+                vnp_TransactionNo: order.paymentInfo.vnp_TransactionNo,
+                refundAmount: order.paymentInfo.finalAmount,
+                refundReason: `Hủy đơn hàng ${order._id}`,
+                merchantId: 'PX2DIOF7',
+                instructions: [
+                    '1. Đăng nhập vào VNPay Merchant Dashboard',
+                    '2. Vào mục "Giao dịch" hoặc "Quản lý giao dịch"',
+                    '3. Tìm giao dịch có mã: ' + order.paymentInfo.vnp_TransactionNo,
+                    '4. Chọn "Hoàn tiền" hoặc "Refund"',
+                    '5. Nhập số tiền hoàn: ' + order.paymentInfo.finalAmount.toLocaleString('vi-VN') + ' VND',
+                    '6. Nhập lý do: Hủy đơn hàng ' + order._id,
+                    '7. Xác nhận hoàn tiền'
+                ]
+            }
         });
 
-        console.log('VNPay refund URL created:', refundUrl);
+        console.log('VNPay refund info saved for manual processing');
         
         return {
             success: true,
-            refundUrl: refundUrl,
-            refundTxnRef: refundTxnRef
+            message: 'Đã lưu thông tin hoàn tiền. Admin cần thực hiện hoàn tiền thủ công trên VNPay Dashboard.',
+            refundTxnRef: refundTxnRef,
+            originalTransactionNo: order.paymentInfo.vnp_TransactionNo,
+            refundAmount: order.paymentInfo.finalAmount,
+            adminInstructions: {
+                vnp_TransactionNo: order.paymentInfo.vnp_TransactionNo,
+                refundAmount: order.paymentInfo.finalAmount,
+                refundReason: `Hủy đơn hàng ${order._id}`,
+                merchantId: 'PX2DIOF7'
+            }
         };
     } catch (error) {
-        console.error('Lỗi tạo URL hoàn tiền VNPay:', error);
+        console.error('Lỗi tạo thông tin hoàn tiền VNPay:', error);
         return {
             success: false,
             message: error.message
         };
     }
-} 
+}
+
+// Hiển thị trang thông tin hoàn tiền VNPay
+exports.getRefundInfo = async (req, res, next) => {
+    try {
+        const orderId = req.params.orderId;
+        const order = await Order.getOrderById(orderId);
+        
+        if (!order) {
+            return res.redirect('/admin/orders');
+        }
+        
+        res.render('admin/order/refund-info', {
+            title: 'Thông tin Hoàn tiền VNPay',
+            order: order
+        });
+    } catch (error) {
+        console.error('Lỗi khi lấy thông tin hoàn tiền:', error);
+        res.redirect('/admin/orders');
+    }
+};
+
+// Cập nhật trạng thái hoàn tiền
+exports.updateRefundStatus = async (req, res, next) => {
+    try {
+        const orderId = req.params.orderId;
+        const { newRefundStatus, refundNote } = req.body;
+        
+        if (!orderId || !newRefundStatus) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Thiếu thông tin cần thiết' 
+            });
+        }
+        
+        // Danh sách trạng thái hợp lệ
+        const validStatuses = ['pending', 'completed', 'failed'];
+        
+        if (!validStatuses.includes(newRefundStatus)) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Trạng thái không hợp lệ' 
+            });
+        }
+        
+        // Cập nhật trạng thái hoàn tiền
+        const updateData = {
+            'refundInfo.refundStatus': newRefundStatus,
+            'refundInfo.updatedAt': new Date()
+        };
+        
+        if (refundNote) {
+            updateData['refundInfo.adminNote'] = refundNote;
+        }
+        
+        const db = require('../util/database').getDb();
+        await db.collection('orders').updateOne(
+            { _id: new ObjectId(orderId) },
+            { $set: updateData }
+        );
+        
+        return res.status(200).json({ 
+            success: true, 
+            message: 'Cập nhật trạng thái hoàn tiền thành công',
+            newStatus: newRefundStatus
+        });
+    } catch (error) {
+        console.error('Lỗi khi cập nhật trạng thái hoàn tiền:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Đã xảy ra lỗi khi cập nhật trạng thái hoàn tiền: ' + error.message 
+        });
+    }
+}; 

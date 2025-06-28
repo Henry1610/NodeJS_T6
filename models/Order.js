@@ -230,6 +230,32 @@ class Order {
 
         return true;
     }
+
+    // Lưu mã giao dịch VNPay vào đơn hàng
+    static async updateOrderWithVNPayTransactionNo(orderId, vnp_TransactionNo) {
+        const db = getDb();
+        try {
+            const result = await db.collection('orders').updateOne(
+                { _id: new ObjectId(orderId) },
+                { $set: { 'paymentInfo.vnp_TransactionNo': vnp_TransactionNo } }
+            );
+            
+            if (result.matchedCount === 0) {
+                console.error(`Không tìm thấy đơn hàng với ID: ${orderId}`);
+                throw new Error(`Không tìm thấy đơn hàng với ID: ${orderId}`);
+            }
+            
+            if (result.modifiedCount === 0) {
+                console.warn(`Đơn hàng ${orderId} đã có mã giao dịch VNPay hoặc không có thay đổi`);
+            }
+            
+            console.log(`Đã cập nhật mã giao dịch VNPay: ${vnp_TransactionNo} cho đơn hàng: ${orderId}`);
+            return result;
+        } catch (error) {
+            console.error(`Lỗi khi cập nhật mã giao dịch VNPay cho đơn hàng ${orderId}:`, error);
+            throw error;
+        }
+    }
 }
 
 module.exports = Order; 
