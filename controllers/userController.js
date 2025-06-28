@@ -396,6 +396,9 @@ exports.checkout = async (req, res, next) => {
     }
 
     // Trả về kết quả với đường dẫn đến trang thành công
+    console.log('Checkout result:', result);
+    console.log('Inserted ID:', result.insertedId);
+    
     return res.status(200).json({
       success: true,
       message: 'Đặt hàng thành công',
@@ -484,6 +487,54 @@ exports.getCart = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Lỗi khi lấy giỏ hàng:', error);
+    next(error);
+  }
+};
+
+// Trang checkout
+exports.getCheckoutPage = async (req, res, next) => {
+  try {
+    if (!req.session.isLoggedIn) {
+      return res.render('auth/login', {
+        title: 'Đăng nhập',
+        path: '/login',
+        errorMessage: 'Vui lòng đăng nhập để thanh toán'
+      });
+    }
+
+    const userId = req.session.user._id;
+    const cart = await Cart.getCart(userId);
+    const cartItems = await cart.getDetailCart();
+
+    if (!cartItems || cartItems.length === 0) {
+      req.session.flash = {
+        type: 'error',
+        message: 'Giỏ hàng trống, không thể thanh toán'
+      };
+      return res.redirect('/user/cart');
+    }
+
+    // Tính tổng tiền
+    let totalPrice = 0;
+    cartItems.forEach(item => {
+      totalPrice += item.product.price * item.quantity;
+    });
+
+    // Tính phí vận chuyển
+    const shippingFee = totalPrice >= 500000 ? 0 : 30000;
+    const finalTotal = totalPrice + shippingFee;
+
+    res.render('user/pages/checkout', {
+      title: 'Thanh toán',
+      path: '/user/checkout',
+      cartItems: cartItems,
+      totalPrice: totalPrice,
+      shippingFee: shippingFee,
+      finalTotal: finalTotal,
+      user: req.session.user
+    });
+  } catch (error) {
+    console.error('Lỗi khi hiển thị trang checkout:', error);
     next(error);
   }
 };

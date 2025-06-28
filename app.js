@@ -12,35 +12,108 @@ const userController = require('./controllers/userController');
 const flash = require('connect-flash');
 const mongoose = require('mongoose');
 const MongoDBStore = require('connect-mongodb-session')(session);
-const {VNPay,ingnoreLogger,ProductCode,VNPayLocale,dateFormat} = require('vnpay');
+const {VNPay,ingnoreLogger,ProductCode,dateFormat} = require('vnpay');
 
+const VNPayLocale = {
+  VN: 'vn',
+  EN: 'en'
+};
 
 const app = express();
-app.post('/api/create-qr', async (req, res) => {
-  const vnpay = new VNPay({
-    tmnCode: 'PX2DIOF7',
-    secureSecret: '19A2ZLVXKMDZ0YIJ2DDPYAY8LPB7I8FF',
-    vnpayHost: 'https://sandbox.vnpayment.vn/',
-    testMode: true, // tùy chọn
-    hashAlgorithm: 'SHA512', // tùy chọn
-    logger: fn => fn, // tùy chọn
-  });
-const tomorrow = new Date();
-tomorrow.setDate(tomorrow.getDate() + 1);
-  const vnpayResponse = await vnpay.buildPaymentUrl({
-    vnp_Amount: 50000, // Số tiền
-    vnp_IpAddr: '127.0.0.1',
-    vnp_TxnRef: '123456',
-    vnp_OrderInfo: '123456',
-    vnp_OrderType: 'ProductCode.Other',
-    vnp_ReturnUrl: 'http://localhost:3000/api/check-payment-vnpay',
-    vnp_Locale: VNPayLocale.VN, // 'vn' hoặc 'en'
-    vnp_CreateDate: dateFormat(new Date()), // tùy chọn, mặc định là hiện tại
-    vnp_ExpireDate: dateFormat(tomorrow), // tùy chọn
-  });
 
-  return res.status(201).json(vnpayResponse);
+// Cấu hình middleware trước
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(bodyParser.json());  // Thêm parser cho JSON payloads
+
+// Route VNPay API
+app.post('/api/create-qr', async (req, res) => {
+  try {
+    const { amount, orderId, orderInfo } = req.body;
+    
+    // Validate input
+    if (!amount || !orderId) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu thông tin số tiền hoặc mã đơn hàng'
+      });
+    }
+
+    const vnpay = new VNPay({
+      tmnCode: 'PX2DIOF7',
+      secureSecret: '19A2ZLVXKMDZ0YIJ2DDPYAY8LPB7I8FF',
+      vnpayHost: 'https://sandbox.vnpayment.vn/',
+      testMode: true,
+      hashAlgorithm: 'SHA512',
+      logger: fn => fn,
+    });
+
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const vnpayResponse = await vnpay.buildPaymentUrl({
+      vnp_Amount: amount, // KHÔNG nhân 100 nữa, client đã gửi đúng số tiền VNĐ x 100
+      vnp_IpAddr: req.ip || '127.0.0.1',
+      vnp_TxnRef: orderId,
+      vnp_OrderInfo: orderInfo || `Thanh toan don hang ${orderId}`,
+      vnp_OrderType: ProductCode.Other,
+      vnp_ReturnUrl: 'http://localhost:3000/api/check-payment-vnpay',
+      vnp_Locale: VNPayLocale.VN,
+      vnp_CreateDate: dateFormat(new Date()),
+      vnp_ExpireDate: dateFormat(tomorrow),
+    });
+
+    return res.status(201).json({
+      success: true,
+      data: vnpayResponse
+    });
+  } catch (error) {
+    console.error('Lỗi tạo QR code:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Lỗi tạo QR code thanh toán'
+    });
+  }
 });
+
+app.get('/api/check-payment-vnpay', (req, res) => {
+  console.log('VNPay callback data:', req.query);
+  
+  // Kiểm tra response code
+  const vnp_ResponseCode = req.query.vnp_ResponseCode;
+  const vnp_Amount = req.query.vnp_Amount;
+  const vnp_TxnRef = req.query.vnp_TxnRef;
+  
+  console.log('vnp_TxnRef:', vnp_TxnRef); // Thêm logging
+  
+  if (vnp_ResponseCode === '00') {
+    // Thanh toán thành công
+    const amount = parseInt(vnp_Amount) / 100; // Chia cho 100 để lấy số tiền thực
+    
+    if (vnp_TxnRef) {
+      return res.redirect(`/user/checkout/success/${vnp_TxnRef}?payment=vnpay&amount=${amount}`);
+    } else {
+      // Nếu không có TxnRef, chuyển hướng về trang đơn hàng
+      return res.redirect(`/user/orders?success=Thanh toán VNPay thành công`);
+    }
+  } else {
+    // Thanh toán thất bại
+    if (vnp_TxnRef) {
+      return res.redirect(`/user/checkout?error=payment_failed&orderId=${vnp_TxnRef}`);
+    } else {
+      return res.redirect(`/user/checkout?error=payment_failed`);
+    }
+  }
+});
+
+// Route test để kiểm tra VNPay callback
+app.get('/test-vnpay-callback', (req, res) => {
+  console.log('Test VNPay callback - All query params:', req.query);
+  res.json({
+    message: 'Test VNPay callback received',
+    query: req.query
+  });
+});
+
 //Khai báo engine
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
@@ -55,8 +128,6 @@ const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
 const { log } = require('console');
 
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(bodyParser.json());  // Thêm parser cho JSON payloads
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Cấu hình session đơn giản

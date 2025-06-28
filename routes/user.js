@@ -38,6 +38,9 @@ router.post('/cart/add', authMiddleware.isAuth, userController.addToCart);
 router.post('/cart/remove', authMiddleware.isAuth, userController.removeFromCart);
 router.post('/cart/update-quantity', authMiddleware.isAuth, userController.updateCartQuantity);
 
+// Trang checkout (yêu cầu đăng nhập)
+router.get('/checkout', authMiddleware.isAuth, userController.getCheckoutPage);
+
 // API lấy danh sách mã giảm giá khả dụng cho giỏ hàng
 router.get('/cart/available-discounts', authMiddleware.isAuth, async (req, res) => {
   try {
