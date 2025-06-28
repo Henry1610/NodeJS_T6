@@ -3,6 +3,7 @@ const router = express.Router();
 const userController = require('../controllers/userController');
 const orderController = require('../controllers/orderController');
 const authMiddleware = require('../middleware/auth');
+const Discount = require('../models/Discount');
 
 // Trang chủ cho người dùng
 router.get('/', userController.getHomePage);
@@ -36,5 +37,22 @@ router.get('/cart', authMiddleware.isAuth, userController.getCart);
 router.post('/cart/add', authMiddleware.isAuth, userController.addToCart);
 router.post('/cart/remove', authMiddleware.isAuth, userController.removeFromCart);
 router.post('/cart/update-quantity', authMiddleware.isAuth, userController.updateCartQuantity);
+
+// API lấy danh sách mã giảm giá khả dụng cho giỏ hàng
+router.get('/cart/available-discounts', authMiddleware.isAuth, async (req, res) => {
+  try {
+    const now = new Date();
+    const discounts = await Discount.fetchAll();
+    // Lọc các mã còn hiệu lực, đang active, trong thời gian áp dụng
+    const available = discounts.filter(d =>
+      d.is_active &&
+      now >= new Date(d.start_date) &&
+      now <= new Date(d.end_date)
+    );
+    res.json({ discounts: available });
+  } catch (err) {
+    res.status(500).json({ discounts: [] });
+  }
+});
 
 module.exports = router; 

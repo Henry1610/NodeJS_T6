@@ -119,7 +119,21 @@
               </div>
             <% } %>
             
+            <!-- Hiển thị số tiền đã giảm (nếu có) -->
+            <div id="discountAppliedRow" class="d-flex justify-content-between mb-2" style="display:none;">
+              <span>Đã giảm:</span>
+              <span class="text-success font-weight-bold" id="discountAppliedAmount">0 VNĐ</span>
+            </div>
+            
             <hr>
+            <!-- Mã giảm giá: Input, Nút, Modal -->
+            <div class="mb-3">
+              <div class="input-group">
+                <input type="text" class="form-control" id="discountCode" name="discountCode" placeholder="Nhập mã giảm giá">
+                <button type="button" class="btn btn-outline-info" id="showDiscountsBtn">Xem mã giảm giá</button>
+              </div>
+              <div id="discountMessage" class="small mt-2"></div>
+            </div>
             
             <div class="d-flex justify-content-between mb-4">
               <span class="font-weight-bold">Tổng thanh toán:</span>
@@ -144,172 +158,91 @@
   <% } %>
 </div>
 
+<!-- Modal hiển thị danh sách mã giảm giá -->
+<div class="modal fade" id="discountsModal" tabindex="-1" aria-labelledby="discountsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="discountsModalLabel">Mã giảm giá khả dụng</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="discountsList">
+        <!-- Danh sách mã sẽ render ở đây -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-  document.addEventListener('DOMContentLoaded', function() {
-    const quantityInputs = document.querySelectorAll('.quantity-input');
-    const decreaseButtons = document.querySelectorAll('.quantity-decrease');
-    const increaseButtons = document.querySelectorAll('.quantity-increase');
-    const checkoutBtn = document.getElementById('checkoutBtn');
-    
-    // Xử lý nút giảm số lượng
-    decreaseButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const input = this.parentElement.nextElementSibling;
-        let value = parseInt(input.value);
-        if (value > 1) {
-          input.value = value - 1;
-          updateQuantity(input);
-        }
-      });
-    });
-    
-    // Xử lý nút tăng số lượng
-    increaseButtons.forEach(button => {
-      button.addEventListener('click', function() {
-        const input = this.parentElement.previousElementSibling;
-        let value = parseInt(input.value);
-        const max = parseInt(input.getAttribute('max'));
-        if (value < max) {
-          input.value = value + 1;
-          updateQuantity(input);
-        }
-      });
-    });
-    
-    // Xử lý khi thay đổi giá trị ô input
-    quantityInputs.forEach(input => {
-      input.addEventListener('change', function() {
-        updateQuantity(this);
-      });
-    });
-    
-    // Hàm cập nhật số lượng
-    function updateQuantity(input) {
-      const productId = input.dataset.productId;
-      const quantity = parseInt(input.value);
-      const price = parseFloat(input.dataset.productPrice);
-      
-      // Cập nhật giao diện
-      const row = input.closest('tr');
-      const totalCell = row.querySelector('.item-total');
-      const itemTotal = price * quantity;
-      totalCell.textContent = itemTotal.toLocaleString('vi-VN') + ' VNĐ';
-      
-      // Gửi yêu cầu AJAX để cập nhật giỏ hàng
-      fetch('/user/cart/update-quantity', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          productId: productId,
-          quantity: quantity
-        })
-      })
-      .then(response => response.json())
-      .then(data => {
-        if (data.success) {
-          // Cập nhật tổng tiền trong tóm tắt đơn hàng
-          const subtotalElement = document.querySelector('.cart-subtotal');
-          const shippingFeeElement = document.querySelector('.shipping-fee');
-          const totalElement = document.querySelector('.cart-total');
-          
-          const subtotal = data.totalPrice;
-          const shippingFee = data.shippingFee;
-          const total = data.finalTotal;
-          
-          subtotalElement.textContent = subtotal.toLocaleString('vi-VN') + ' VNĐ';
-          shippingFeeElement.textContent = shippingFee.toLocaleString('vi-VN') + ' VNĐ';
-          totalElement.textContent = total.toLocaleString('vi-VN') + ' VNĐ';
-        }
-      })
-      .catch(error => {
-        console.error('Lỗi khi cập nhật giỏ hàng:', error);
-      });
-    }
-    
-    // Xử lý nút Thanh toán
-    if (checkoutBtn) {
-      checkoutBtn.addEventListener('click', function() {
-        // Vô hiệu hóa nút để tránh click nhiều lần
-        checkoutBtn.disabled = true;
-        checkoutBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Đang xử lý...';
-        
-        // Hiển thị xác nhận
-        if (confirm('Bạn có chắc chắn muốn đặt hàng?')) {
-          // Gửi yêu cầu đặt hàng
-          fetch('/user/checkout', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            }
-          })
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`Mã lỗi: ${response.status}`);
-            }
-            return response.json();
-          })
-          .then(data => {
-            if (data.success) {
-              showSuccessMessage('Đặt hàng thành công! Đơn hàng của bạn đã được lưu vào lịch sử mua hàng.');
-              // Chuyển hướng đến trang thành công sau khi đặt hàng
-              setTimeout(() => {
-                window.location.href = data.redirectUrl || '/user/orders';
-              }, 1500);
-            } else {
-              throw new Error(data.message || 'Lỗi không xác định khi đặt hàng');
-            }
-          })
-          .catch(error => {
-            console.error('Lỗi khi đặt hàng:', error);
-            showErrorMessage(error.message || 'Đã xảy ra lỗi khi đặt hàng. Vui lòng thử lại sau.');
-            
-            // Khôi phục nút
-            checkoutBtn.disabled = false;
-            checkoutBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Tiến hành thanh toán';
+document.addEventListener('DOMContentLoaded', function() {
+  const showDiscountsBtn = document.getElementById('showDiscountsBtn');
+  const discountsModal = document.getElementById('discountsModal');
+  const discountsListDiv = document.getElementById('discountsList');
+  const discountsModalInstance = new bootstrap.Modal(discountsModal);
+  const discountCodeInput = document.getElementById('discountCode');
+  const discountAppliedRow = document.getElementById('discountAppliedRow');
+  const discountAppliedAmount = document.getElementById('discountAppliedAmount');
+  window.discountsList = [];
+
+  // Lấy danh sách mã giảm giá ngay khi load trang (đảm bảo luôn có dữ liệu)
+  fetch('/user/cart/available-discounts')
+    .then(res => res.json())
+    .then(data => { window.discountsList = data.discounts || []; });
+
+  if (showDiscountsBtn && discountsModal && discountsListDiv) {
+    showDiscountsBtn.addEventListener('click', function() {
+      // Không cần fetch lại, dùng window.discountsList
+      const discounts = window.discountsList;
+      discountsListDiv.innerHTML = discounts.length > 0 ? discounts.map(d => `
+        <div class='card mb-2'>
+          <div class='card-body'>
+            <div class='d-flex justify-content-between align-items-center'>
+              <div>
+                <span class='badge bg-success'>${d.code}</span>
+                <span class='ms-2'>${d.description || ''}</span>
+                <div class='small text-muted'>
+                  Giảm: ${d.value.toLocaleString('vi-VN')} VNĐ, 
+                  Đơn tối thiểu: ${d.min_order_value.toLocaleString('vi-VN')} VNĐ
+                </div>
+              </div>
+              <button type="button" class="btn btn-primary btn-sm apply-discount-btn" data-code="${d.code}">Áp dụng</button>
+            </div>
+          </div>
+        </div>
+      `).join('') : '<div class="alert alert-info">Không có mã giảm giá nào khả dụng.</div>';
+      setTimeout(() => {
+        document.querySelectorAll('.apply-discount-btn').forEach(btn => {
+          btn.addEventListener('click', function() {
+            if (discountCodeInput) discountCodeInput.value = this.dataset.code;
+            discountsModalInstance.hide();
+            if (discountCodeInput) discountCodeInput.dispatchEvent(new Event('input'));
           });
-        } else {
-          // Người dùng hủy xác nhận, khôi phục nút
-          checkoutBtn.disabled = false;
-          checkoutBtn.innerHTML = '<i class="fas fa-lock me-2"></i>Tiến hành thanh toán';
-        }
-      });
-    }
+        });
+      }, 0);
+      discountsModalInstance.show();
+    });
+  }
 
-    // Thêm hai hàm hiển thị thông báo
-    function showSuccessMessage(message) {
-      // Kiểm tra và xóa thông báo cũ nếu có
-      const existingAlert = document.querySelector('.checkout-alert');
-      if (existingAlert) {
-        existingAlert.remove();
+  if (discountCodeInput) {
+    discountCodeInput.addEventListener('input', function() {
+      const code = this.value.trim();
+      const discount = (window.discountsList || []).find(d => d.code === code);
+      const subtotalElement = document.querySelector('.cart-subtotal');
+      let totalPrice = 0;
+      if (subtotalElement) {
+        totalPrice = parseInt(subtotalElement.textContent.replace(/\D/g, ''));
       }
-
-      // Tạo phần tử thông báo mới
-      const alertElement = document.createElement('div');
-      alertElement.className = 'alert alert-success checkout-alert';
-      alertElement.innerHTML = `<i class="fas fa-check-circle me-2"></i>${message}`;
-      
-      // Thêm vào DOM sau nút thanh toán
-      const cardBody = document.querySelector('.checkout-btn').closest('.card-body');
-      cardBody.appendChild(alertElement);
-    }
-
-    function showErrorMessage(message) {
-      // Kiểm tra và xóa thông báo cũ nếu có
-      const existingAlert = document.querySelector('.checkout-alert');
-      if (existingAlert) {
-        existingAlert.remove();
+      if (discount && totalPrice >= discount.min_order_value) {
+        discountAppliedRow.style.display = '';
+        discountAppliedAmount.textContent = `-${discount.value.toLocaleString('vi-VN')} VNĐ`;
+      } else {
+        discountAppliedRow.style.display = 'none';
+        discountAppliedAmount.textContent = '0 VNĐ';
       }
-
-      // Tạo phần tử thông báo mới
-      const alertElement = document.createElement('div');
-      alertElement.className = 'alert alert-danger mt-3 checkout-alert';
-      alertElement.innerHTML = `<i class="fas fa-exclamation-circle me-2"></i>${message}`;
-      
-      // Thêm vào DOM sau nút thanh toán
-      const cardBody = document.querySelector('.checkout-btn').closest('.card-body');
-      cardBody.appendChild(alertElement);
-    }
-  });
-</script> 
+    });
+  }
+});
+</script>

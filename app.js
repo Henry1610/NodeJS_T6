@@ -12,9 +12,35 @@ const userController = require('./controllers/userController');
 const flash = require('connect-flash');
 const mongoose = require('mongoose');
 const MongoDBStore = require('connect-mongodb-session')(session);
+const {VNPay,ingnoreLogger,ProductCode,VNPayLocale,dateFormat} = require('vnpay');
+
 
 const app = express();
+app.post('/api/create-qr', async (req, res) => {
+  const vnpay = new VNPay({
+    tmnCode: 'PX2DIOF7',
+    secureSecret: '19A2ZLVXKMDZ0YIJ2DDPYAY8LPB7I8FF',
+    vnpayHost: 'https://sandbox.vnpayment.vn/',
+    testMode: true, // tùy chọn
+    hashAlgorithm: 'SHA512', // tùy chọn
+    logger: fn => fn, // tùy chọn
+  });
+const tomorrow = new Date();
+tomorrow.setDate(tomorrow.getDate() + 1);
+  const vnpayResponse = await vnpay.buildPaymentUrl({
+    vnp_Amount: 50000, // Số tiền
+    vnp_IpAddr: '127.0.0.1',
+    vnp_TxnRef: '123456',
+    vnp_OrderInfo: '123456',
+    vnp_OrderType: 'ProductCode.Other',
+    vnp_ReturnUrl: 'http://localhost:3000/api/check-payment-vnpay',
+    vnp_Locale: VNPayLocale.VN, // 'vn' hoặc 'en'
+    vnp_CreateDate: dateFormat(new Date()), // tùy chọn, mặc định là hiện tại
+    vnp_ExpireDate: dateFormat(tomorrow), // tùy chọn
+  });
 
+  return res.status(201).json(vnpayResponse);
+});
 //Khai báo engine
 app.engine('ejs', ejsMate);
 app.set('view engine', 'ejs');
