@@ -1,10 +1,10 @@
 <header>
     <!-- Debug info - xóa sau khi test xong -->
-    <% if (typeof isAuthenticated !== 'undefined') { %>
+    <!-- <% if (typeof isAuthenticated !== 'undefined') { %>
         <div style="background: #f0f0f0; padding: 5px; font-size: 12px; text-align: center;">
             Debug: isAuthenticated = <%= isAuthenticated %>, user = <%= user ? user.email : 'null' %>
         </div>
-    <% } %>
+    <% } %> -->
     
     <nav class="navbar navbar-expand-lg navbar-dark bg-primary bg-gradient shadow-sm">
         <div class="container">
@@ -79,7 +79,7 @@
                         </a>
                         <!-- Nút đăng xuất riêng biệt -->
                         <a href="/logout" class="btn btn-outline-light rounded-pill">
-                            <i class="fas fa-sign-out-alt me-1"></i> Đăng xuất
+                            <i class="fas fa-sign-out-alt me-1"></i> 
                         </a>
                     </div>
                 <% } else { %>
